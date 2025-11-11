@@ -33,10 +33,17 @@ export function validateEmail(email: string): boolean {
 
 /**
  * Generates a unique local ID for the user
+ * Note: This is a simple UUID-like implementation for client-side use.
+ * In production, user IDs should be generated server-side to ensure uniqueness
+ * and security. This is sufficient for a mock/demo database.
  * @returns A unique identifier
  */
 export function generateLocalId(): string {
-  return `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // Simple UUID-like generation using timestamp and counter
+  // This is NOT cryptographically secure but suitable for demo purposes
+  const timestamp = Date.now().toString(36);
+  const counter = Math.floor(performance.now() * 1000).toString(36);
+  return `user_${timestamp}_${counter}`;
 }
 
 /**
