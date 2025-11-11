@@ -65,7 +65,18 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+        <Link href="/onboarding/step1">
+          <Link.Trigger>
+            <ThemedText type="subtitle">Step 3: Start Onboarding</ThemedText>
+          </Link.Trigger>
+          <Link.Preview />
+        </Link>
+        <ThemedText>
+          Complete the onboarding process to set up your Breath Hold Coach account.
+        </ThemedText>
+      </ThemedView>
+      <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Step 4: Get a fresh start</ThemedText>
         <ThemedText>
           {`When you're ready, run `}
           <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
