@@ -1,2 +1,2 @@
 # Breath-Hold-Coach
-E-Health E-Learning application for practicing Deep Inspirational Breath Hold (DIBH)
+Helping women prepare for their hospital visits by teaching them Deep Inspirational Breath Hold (DIBH)
