@@ -53,7 +53,7 @@ export function CustomBottomTabBar(props: BottomTabBarProps) {
                             accessibilityLabel={accessibilityLabel}
                             onPress={onPress}
                             onLongPress={onLongPress}
-                            style={[styles.tab, isFocused && styles.tabActive]}
+                            style={[styles.tab]}
                         >
                             {icon && <View style={styles.iconContainer}>{icon}</View>}
                             {label ? (
@@ -80,7 +80,6 @@ interface Styles {
     container: ViewStyle;
     content: ViewStyle;
     tab: ViewStyle;
-    tabActive: ViewStyle;
     iconContainer: ViewStyle;
     label: TextStyle;
 }
@@ -107,7 +106,6 @@ const styles = StyleSheet.create<Styles>({
         flex: 1,
         minWidth: 0,
     },
-    tabActive: {},
     iconContainer: {
         width: 32,
         height: 32,
