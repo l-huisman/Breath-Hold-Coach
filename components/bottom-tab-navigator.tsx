@@ -3,13 +3,15 @@ import {Pressable, StyleSheet, Text, TextStyle, View, ViewStyle} from 'react-nat
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors} from '@/constants/theme';
+import {useColorScheme} from '@/hooks/use-color-scheme';
 
 export function CustomBottomTabBar(props: BottomTabBarProps) {
     const {state, descriptors, navigation} = props;
     const insets = useSafeAreaInsets();
+    const colorScheme = useColorScheme() ?? 'light';
 
     return (
-        <View style={[styles.container, {paddingBottom: insets.bottom}]}>
+        <View style={[styles.container, {paddingBottom: insets.bottom, backgroundColor: Colors[colorScheme].background}]}>
             <View style={styles.content}>
                 {state.routes.map((route, index) => {
                     const isFocused = state.index === index;
@@ -26,7 +28,7 @@ export function CustomBottomTabBar(props: BottomTabBarProps) {
                     const accessibilityLabel = options.tabBarAccessibilityLabel;
                     const icon = options.tabBarIcon?.({
                         focused: isFocused,
-                        color: isFocused ? Colors.light.accent : Colors.light.text,
+                        color: isFocused ? Colors[colorScheme].accent : Colors[colorScheme].text,
                         size: 32,
                     });
 
@@ -58,7 +60,7 @@ export function CustomBottomTabBar(props: BottomTabBarProps) {
                             {icon && <View style={styles.iconContainer}>{icon}</View>}
                             {label ? (
                                 <Text
-                                    style={[styles.label]}
+                                    style={[styles.label, {color: Colors[colorScheme].text}]}
                                     adjustsFontSizeToFit={true}
                                     numberOfLines={1}
                                     minimumFontScale={0.8}
@@ -86,7 +88,7 @@ interface Styles {
 
 const styles = StyleSheet.create<Styles>({
     container: {
-        backgroundColor: Colors.light.background,
+        // backgroundColor applied dynamically
     },
     content: {
         flexDirection: 'row',
@@ -113,7 +115,6 @@ const styles = StyleSheet.create<Styles>({
     },
     label: {
         fontSize: 12,
-        color: Colors.light.text,
         textAlign: 'center',
         fontFamily: 'Montserrat',
         fontWeight: '600',
