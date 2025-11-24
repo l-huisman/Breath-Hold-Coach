@@ -27,7 +27,7 @@ export function CustomBottomTabBar(props: BottomTabBarProps) {
                     const icon = options.tabBarIcon?.({
                         focused: isFocused,
                         color: isFocused ? Colors.light.accent : Colors.light.text,
-                        size: 24,
+                        size: 32,
                     });
 
                     const onPress = () => {
