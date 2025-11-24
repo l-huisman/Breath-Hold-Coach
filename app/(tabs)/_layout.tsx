@@ -14,7 +14,6 @@ export default function TabLayout() {
         <Tabs
             tabBar={(props) => <CustomBottomTabBar {...props} />}
             screenOptions={{
-                tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
                 headerShown: false,
                 tabBarButton: HapticTab,
             }}>
