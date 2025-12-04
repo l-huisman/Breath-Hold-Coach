@@ -24,7 +24,7 @@ export default function TabLayout() {
                 name="relax"
                 options={{
                     title: 'Ontspan',
-                    tabBarIcon: ({color}) => <IconSymbol size={32} name="leaf.fill" color={color}/>,
+                    tabBarIcon: ({color}) => <IconSymbol size={32} name="figure.mind.and.body" color={color}/>,
                 }}
             />
             <Tabs.Screen
