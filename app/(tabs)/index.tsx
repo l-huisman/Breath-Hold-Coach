@@ -6,12 +6,19 @@ import {ProgressIndicator} from '@/components/progress-indicator';
 import {Icon} from '@/components/icon';
 import {Button} from '@/components/button';
 import {Separator} from '@/components/separator';
+import {useUser} from '@/contexts/user-context';
 
 export default function HomeScreen() {
+    const {user} = useUser();
+
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
             <ThemedView style={styles.container}>
-                <ThemedText type="title" style={styles.title}>Home</ThemedText>
+
+                {/* Welcome Text */}
+                <ThemedText type="title" style={styles.welcome}>
+                    Hallo, {user.name} 👋
+                </ThemedText>
 
                 {/* Progress Indicator Examples */}
                 <ThemedView style={styles.section}>
@@ -63,6 +70,9 @@ const styles = StyleSheet.create({
     },
     title: {
         marginBottom: 10,
+    },
+    welcome: {
+        marginBottom: 24,
     },
     section: {
         gap: 16,
