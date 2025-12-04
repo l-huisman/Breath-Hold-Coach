@@ -9,9 +9,11 @@ export const Colors = {
     light: {
         text: '#1E1E1E',
         textMuted: '#404040',
+        textContrast: '#F2EEEB',
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        tertiary: '#284EA6',
         accent: '#FF4B3E',
         // Legacy compatibility
         tint: '#284EA6',
@@ -23,9 +25,11 @@ export const Colors = {
     dark: {
         text: '#1E1E1E',
         textMuted: '#404040',
+        textContrast: '#F2EEEB',
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        tertiary: '#284EA6',
         accent: '#FF4B3E',
         // Legacy compatibility
         tint: '#284EA6',
