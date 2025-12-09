@@ -1,23 +1,28 @@
 import React, {createContext, useContext, useState, ReactNode} from 'react';
 
+export interface PracticeMoment {
+    id: string;
+    time: string; // HH:mm format
+    enabled: boolean;
+}
+
 export interface UserPreferences {
     notifications: boolean;
-    hapticFeedback: boolean;
-    soundEnabled: boolean;
-    theme: 'light' | 'dark' | 'system';
-    language: string;
+    practiceMoments: PracticeMoment[];
 }
 
 export interface UserDetails {
     name: string;
     dateOfBirth: Date | null;
     patientNumber: string;
+    assistiveLearning: boolean | null; // null = not yet filled in during onboarding
 }
 
 export interface UserSettings {
-    breathHoldGoal: number; // in seconds
+    breathHoldGoal: number; // in seconds - ultimate goal
+    dailyGoal: number; // in seconds - daily increment goal
+    dailyReminder: boolean;
     dailyReminderTime: string | null;
-    weeklyGoal: number; // number of sessions
 }
 
 export interface UserContextType {
@@ -29,25 +34,44 @@ export interface UserContextType {
     updateSettings: (settings: Partial<UserSettings>) => void;
 }
 
+// Default practice moments for non-smokers (2 sessions per day)
+const defaultPracticeMomentsNormalLearning: PracticeMoment[] = [
+    {id: '1', time: '09:00', enabled: true},
+    {id: '2', time: '18:00', enabled: true},
+];
+
+// Default practice moments for smokers (more frequent, smaller sessions)
+const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
+    {id: '1', time: '08:00', enabled: true},
+    {id: '2', time: '11:00', enabled: true},
+    {id: '3', time: '14:00', enabled: true},
+    {id: '4', time: '17:00', enabled: true},
+    {id: '5', time: '20:00', enabled: true},
+];
+
 const defaultUser: UserDetails = {
     name: 'Tineke',
     dateOfBirth: null,
     patientNumber: '123456',
+    assistiveLearning: null,
 };
 
 const defaultPreferences: UserPreferences = {
     notifications: true,
-    hapticFeedback: true,
-    soundEnabled: true,
-    theme: 'system',
-    language: 'nl',
+    practiceMoments: defaultPracticeMomentsNormalLearning,
 };
 
+// Daily goal: seconds to add per day
+// Non-smoker: 5 seconds per day (faster progression)
+// Smoker: 2 seconds per day (smaller steps, more gradual)
 const defaultSettings: UserSettings = {
     breathHoldGoal: 45,
+    dailyGoal: 5, // default for non-smoker
+    dailyReminder: false,
     dailyReminderTime: null,
-    weeklyGoal: 5,
 };
+
+export {defaultPracticeMomentsNormalLearning, defaultPracticeMomentsAssistiveLearning};
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
