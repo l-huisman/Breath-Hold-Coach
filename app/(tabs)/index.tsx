@@ -9,7 +9,7 @@ import {Separator} from '@/components/separator';
 import {useUser} from '@/contexts/user-context';
 
 export default function HomeScreen() {
-    const {user} = useUser();
+    const {user, settings, progress} = useUser();
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -20,26 +20,12 @@ export default function HomeScreen() {
                     Hallo, {user.name} 👋
                 </ThemedText>
 
-                {/* Progress Indicator Examples */}
+                {/* Progress Indicator */}
                 <ThemedView style={styles.section}>
                     <ProgressIndicator
-                        seconds={12}
-                        maxSeconds={45}
+                        seconds={progress.currentBreathHold}
+                        maxSeconds={settings.breathHoldGoal}
                         label="Adem ingehouden"
-                        icon={<Icon name="timer"/>}
-                    />
-
-                    <ProgressIndicator
-                        seconds={30}
-                        maxSeconds={45}
-                        label="Ademhalingstechnieken"
-                        icon={<Icon name="lungs.fill"/>}
-                    />
-
-                    <ProgressIndicator
-                        seconds={45}
-                        maxSeconds={45}
-                        label="Voltooide oefeningen"
                         icon={<Icon name="target"/>}
                     />
                 </ThemedView>
@@ -82,6 +68,6 @@ const styles = StyleSheet.create({
     },
     buttonSection: {
         gap: 24,
-        paddingBottom: 24,
+        paddingBottom: 4,
     },
 });
