@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { IconSymbol, IconSymbolName } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 interface NavItem {
@@ -121,7 +121,6 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 12,
         textAlign: 'center',
-        fontFamily: 'Montserrat',
-        fontWeight: '600',
+        fontFamily: Fonts.semiBold,
     },
 });

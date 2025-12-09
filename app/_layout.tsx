@@ -1,9 +1,21 @@
 import {DefaultTheme, ThemeProvider} from '@react-navigation/native';
 import {Stack} from 'expo-router';
 import {StatusBar} from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import {useFonts} from 'expo-font';
+import {useEffect} from 'react';
 import 'react-native-reanimated';
+import {
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+} from '@expo-google-fonts/montserrat';
 import {Colors} from '@/constants/theme';
 import {UserProvider} from '@/contexts/user-context';
+
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
     anchor: '(tabs)',
@@ -24,7 +36,22 @@ const CustomTheme = {
 };
 
 export default function RootLayout() {
-    // Force light theme for now since dark theme is not designed yet
+    const [fontsLoaded] = useFonts({
+        Montserrat_400Regular,
+        Montserrat_500Medium,
+        Montserrat_600SemiBold,
+        Montserrat_700Bold,
+    });
+
+    useEffect(() => {
+        if (fontsLoaded) {
+            SplashScreen.hideAsync();
+        }
+    }, [fontsLoaded]);
+
+    if (!fontsLoaded) {
+        return null;
+    }
 
     return (
         <UserProvider>

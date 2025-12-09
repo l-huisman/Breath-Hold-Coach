@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, ImageSourcePropType } from 'react-native';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 interface ProgressIndicatorProps {
   /**
@@ -105,21 +105,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   seconds: {
-    fontFamily: 'Montserrat',
+    fontFamily: Fonts.bold,
     fontSize: 18,
-    fontWeight: '700',
     color: Colors.light.primary,
   },
   label: {
-    fontFamily: 'Montserrat',
+    fontFamily: Fonts.semiBold,
     fontSize: 16,
-    fontWeight: '600',
     color: Colors.light.textMuted,
   },
   progressBarContainer: {
     width: '100%',
     height: 8,
-    backgroundColor: '#E5E5E5',
+    backgroundColor: Colors.light.progressBackground,
     borderRadius: 100,
     overflow: 'hidden',
   },
