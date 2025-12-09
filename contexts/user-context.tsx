@@ -25,13 +25,22 @@ export interface UserSettings {
     dailyReminderTime: string | null;
 }
 
+export interface UserProgress {
+    currentBreathHold: number; // current best breath hold in seconds
+    completedExercises: number; // total completed exercises
+    lastPracticeDate: string | null; // ISO date string
+    streakDays: number; // consecutive days practiced
+}
+
 export interface UserContextType {
     user: UserDetails;
     preferences: UserPreferences;
     settings: UserSettings;
+    progress: UserProgress;
     updateUser: (user: Partial<UserDetails>) => void;
     updatePreferences: (preferences: Partial<UserPreferences>) => void;
     updateSettings: (settings: Partial<UserSettings>) => void;
+    updateProgress: (progress: Partial<UserProgress>) => void;
 }
 
 // Default practice moments for non-smokers (2 sessions per day)
@@ -71,6 +80,13 @@ const defaultSettings: UserSettings = {
     dailyReminderTime: null,
 };
 
+const defaultProgress: UserProgress = {
+    currentBreathHold: 12,
+    completedExercises: 0,
+    lastPracticeDate: null,
+    streakDays: 0,
+};
+
 export {defaultPracticeMomentsNormalLearning, defaultPracticeMomentsAssistiveLearning};
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -83,6 +99,7 @@ export function UserProvider({children}: UserProviderProps) {
     const [user, setUser] = useState<UserDetails>(defaultUser);
     const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
     const [settings, setSettings] = useState<UserSettings>(defaultSettings);
+    const [progress, setProgress] = useState<UserProgress>(defaultProgress);
 
     const updateUser = (updates: Partial<UserDetails>) => {
         setUser(prev => ({...prev, ...updates}));
@@ -96,15 +113,21 @@ export function UserProvider({children}: UserProviderProps) {
         setSettings(prev => ({...prev, ...updates}));
     };
 
+    const updateProgress = (updates: Partial<UserProgress>) => {
+        setProgress(prev => ({...prev, ...updates}));
+    };
+
     return (
         <UserContext.Provider
             value={{
                 user,
                 preferences,
                 settings,
+                progress,
                 updateUser,
                 updatePreferences,
                 updateSettings,
+                updateProgress,
             }}
         >
             {children}
@@ -119,4 +142,3 @@ export function useUser() {
     }
     return context;
 }
-
