@@ -29,9 +29,14 @@ export default function RootLayout() {
     return (
         <UserProvider>
             <ThemeProvider value={CustomTheme}>
-                <Stack>
+                <Stack
+                    screenOptions={{
+                        animation: 'none',
+                    }}
+                >
                     <Stack.Screen name="(tabs)" options={{headerShown: false}}/>
-                    <Stack.Screen name="modal" options={{presentation: 'modal', title: 'Modal'}}/>
+                    <Stack.Screen name="explain" options={{headerShown: false}}/>
+                    <Stack.Screen name="modal" options={{presentation: 'modal', title: 'Modal', animation: 'default'}}/>
                 </Stack>
                 <StatusBar style="dark"/>
             </ThemeProvider>
