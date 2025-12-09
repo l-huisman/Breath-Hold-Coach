@@ -81,13 +81,13 @@ const styles = StyleSheet.create({
     },
     cardPressed: {
         opacity: 0.8,
-        backgroundColor: '#F5F7FA',
+        backgroundColor: Colors.light.cardPressedBackground,
     },
     iconContainer: {
         width: 64,
         height: 64,
         borderRadius: 12,
-        backgroundColor: '#E8EDF5',
+        backgroundColor: Colors.light.iconBackground,
         justifyContent: 'center',
         alignItems: 'center',
         flexShrink: 0,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export type SeparatorProps = ViewProps & {
   /**
@@ -17,11 +18,14 @@ export type SeparatorProps = ViewProps & {
  * <Separator color="#CCCCCC" />
  */
 export function Separator({ color, style, ...rest }: SeparatorProps) {
+  const colorScheme = useColorScheme() ?? 'light';
+  const themeColor = Colors[colorScheme].text;
+
   return (
     <View
       style={[
         styles.separator,
-        color && { backgroundColor: color },
+        { backgroundColor: color ?? themeColor },
         style,
       ]}
       {...rest}
@@ -33,7 +37,6 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     width: '100%',
-    backgroundColor: Colors.light.text,
   },
 });
 

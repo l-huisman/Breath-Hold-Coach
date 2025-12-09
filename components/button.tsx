@@ -7,7 +7,7 @@ import {
   type PressableProps,
 } from 'react-native';
 import { router, type Href } from 'expo-router';
-import { Colors } from '@/constants/theme';
+import { Colors, Fonts } from '@/constants/theme';
 
 export type ButtonProps = Omit<PressableProps, 'onPress'> & {
   /**
@@ -91,9 +91,8 @@ const styles = StyleSheet.create({
   text: {
     color: Colors.light.textContrast,
     textAlign: 'center',
-    fontFamily: 'Montserrat',
+    fontFamily: Fonts.semiBold,
     fontSize: 16,
-    fontWeight: '600', // Closest to 550 in React Native
     lineHeight: 16, // Normal line height
   },
 });

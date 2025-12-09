@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     welcome: {
-        marginBottom: 24,
+        // No additional margin needed, container gap handles spacing
     },
     section: {
         gap: 16,

@@ -2,7 +2,7 @@ import React from 'react';
 import {Pressable, StyleSheet, Text, TextStyle, View, ViewStyle} from 'react-native';
 import {BottomTabBarProps} from '@react-navigation/bottom-tabs';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Colors} from '@/constants/theme';
+import {Colors, Fonts} from '@/constants/theme';
 import {useColorScheme} from '@/hooks/use-color-scheme';
 
 export function CustomBottomTabBar(props: BottomTabBarProps) {
@@ -116,7 +116,6 @@ const styles = StyleSheet.create<Styles>({
     label: {
         fontSize: 12,
         textAlign: 'center',
-        fontFamily: 'Montserrat',
-        fontWeight: '600',
+        fontFamily: Fonts.semiBold,
     },
 });
