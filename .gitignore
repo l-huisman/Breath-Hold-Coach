@@ -45,3 +45,10 @@ app-example
 # editor directories and files
 .vscode/
 .idea/
+
+# Claude Code
+.claude/session/*
+.claude/cache/*
+
+# Test coverage
+coverage/
