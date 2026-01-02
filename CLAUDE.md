@@ -1783,6 +1783,8 @@ Use QGIT for automatic formatting:
 - `refactor: extract timer logic to custom hook`
 - `style: update button padding for accessibility`
 - `chore: update dependencies`
+Don't say Claude assisted in the commit messages and avoid mentioning AI.
+Make sure to make separate commits for changes that address different concerns.
 
 ---
 
