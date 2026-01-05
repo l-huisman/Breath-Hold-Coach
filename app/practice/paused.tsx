@@ -7,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Colors, Fonts } from '@/constants/theme';
+import { usePracticeSession } from '@/contexts/practice-session-context';
 
 /**
  * Paused state screen - full-screen overlay.
@@ -14,15 +15,24 @@ import { Colors, Fonts } from '@/constants/theme';
  * Allows user to resume or stop the exercise.
  */
 export default function PracticePausedScreen() {
+    const { session, resumeExercise, abandonSession } = usePracticeSession();
+
     const handleResume = () => {
+        resumeExercise();
         // Use back() to return naturally to exercise screen
         router.back();
     };
 
     const handleStop = () => {
+        abandonSession();
         // Use replace to prevent back navigation
         router.replace('/practice/finish' as any);
     };
+
+    // Format best breath hold for display
+    const formattedBestHold = session.breathHoldDuration > 0
+        ? `${session.breathHoldDuration}s`
+        : '0s';
 
     return (
         <ThemedView style={styles.container}>
@@ -47,13 +57,13 @@ export default function PracticePausedScreen() {
                 Oefening gepauzeerd
             </ThemedText>
 
-            {/* Timer Display - Placeholder */}
+            {/* Timer Display - Show best hold */}
             <ThemedText
                 style={styles.timerText}
-                accessibilityLabel="Huidige tijd"
+                accessibilityLabel={`Beste ademhouding: ${formattedBestHold}`}
                 accessibilityLiveRegion="polite"
             >
-                0:00
+                {formattedBestHold}
             </ThemedText>
 
             {/* Info Text */}

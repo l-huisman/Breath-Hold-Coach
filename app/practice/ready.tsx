@@ -1,5 +1,5 @@
 // filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/ready.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Colors, Fonts } from '@/constants/theme';
+import { usePracticeSession } from '@/contexts/practice-session-context';
 
 /**
  * Ready confirmation screen before starting the exercise.
@@ -18,11 +19,19 @@ import { Colors, Fonts } from '@/constants/theme';
  * Consider adding variant prop to Button component or creating SecondaryButton component.
  */
 export default function PracticeReadyScreen() {
+    const { setReady, startExercise } = usePracticeSession();
+
+    // Transition to ready state on mount
+    useEffect(() => {
+        setReady();
+    }, [setReady]);
+
     const handleNotReady = () => {
         router.back();
     };
 
     const handleStartExercise = () => {
+        startExercise();
         // Use replace to prevent back navigation from exercise
         router.replace('/practice/exercise' as any);
     };

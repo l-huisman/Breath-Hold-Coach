@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Colors, Fonts } from '@/constants/theme';
+import { usePracticeSession } from '@/contexts/practice-session-context';
 
 /**
  * Completion screen with summary after finishing exercise.
@@ -15,10 +16,18 @@ import { Colors, Fonts } from '@/constants/theme';
  * Statistics persistence will be added in issue #52.
  */
 export default function PracticeFinishScreen() {
+    const { session, resetSession } = usePracticeSession();
+
     const handleFinish = () => {
+        resetSession();
         // Replace to clear practice stack and return to home
         router.replace('/(tabs)');
     };
+
+    // Format breath hold duration for display
+    const formattedDuration = session.breathHoldDuration > 0
+        ? `${session.breathHoldDuration} seconden`
+        : 'Geen ademhouding gemeten';
 
     return (
         <SafeAreaView style={styles.safeArea} edges={['top']}>
@@ -43,13 +52,13 @@ export default function PracticeFinishScreen() {
                     Goed gedaan!
                 </ThemedText>
 
-                {/* Summary Stats - Placeholder */}
+                {/* Summary Stats */}
                 <View style={styles.statsContainer}>
                     <ThemedText style={styles.statLabel}>
                         Je hebt volgehouden:
                     </ThemedText>
                     <ThemedText style={styles.statValue}>
-                        12 seconden
+                        {formattedDuration}
                     </ThemedText>
                 </View>
 

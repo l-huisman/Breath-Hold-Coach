@@ -1,5 +1,5 @@
 // filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/index.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Icon, IconName } from '@/components/icon';
 import { Colors, Fonts } from '@/constants/theme';
+import { usePracticeSession } from '@/contexts/practice-session-context';
 
 interface InstructionItemProps {
     icon: IconName;
@@ -30,6 +31,13 @@ function InstructionItem({ icon, text }: InstructionItemProps) {
  * Provides preparatory information before starting the exercise.
  */
 export default function PracticeIndexScreen() {
+    const { startSession } = usePracticeSession();
+
+    // Start session on mount
+    useEffect(() => {
+        startSession();
+    }, [startSession]);
+
     const handleContinue = () => {
         router.push('/practice/ready' as any);
     };

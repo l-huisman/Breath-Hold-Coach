@@ -1,27 +1,75 @@
 // filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/exercise.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Colors, Fonts } from '@/constants/theme';
+import { usePracticeSession } from '@/contexts/practice-session-context';
 
 /**
  * Main exercise screen - full-screen immersive experience.
  * No navigation chrome (handled by layout based on route).
- * Timer logic will be added in issue #44.
  * Breathing animation will be added in issue #45.
  * Audio cues will be added in issue #46.
  */
 export default function PracticeExerciseScreen() {
+    const { session, getCurrentBreathHoldDuration, startBreathHold, pauseExercise, finishExercise } = usePracticeSession();
+    const [displayTime, setDisplayTime] = useState(0);
+
+    // Timer for UI updates - runs when holding breath
+    useEffect(() => {
+        if (session.exercisePhase !== 'hold') {
+            setDisplayTime(0);
+            return;
+        }
+
+        const interval = setInterval(() => {
+            setDisplayTime(getCurrentBreathHoldDuration());
+        }, 100); // Update every 100ms for smooth display
+
+        return () => clearInterval(interval);
+    }, [session.exercisePhase, getCurrentBreathHoldDuration]);
+
+    // Auto-start breath hold when exercise begins
+    useEffect(() => {
+        if (session.currentState === 'exercise' && session.exercisePhase === 'inhale') {
+            // Give user a moment, then start breath hold
+            const timer = setTimeout(() => {
+                startBreathHold();
+            }, 1000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [session.currentState, session.exercisePhase, startBreathHold]);
+
     const handlePause = () => {
+        pauseExercise();
         router.push('/practice/paused' as any);
     };
 
     const handleStop = () => {
+        finishExercise();
         // Use replace to prevent back navigation
         router.replace('/practice/finish' as any);
+    };
+
+    // Format time for display (M:SS)
+    const formattedTime = `${Math.floor(displayTime / 60)}:${String(displayTime % 60).padStart(2, '0')}`;
+
+    // Get instruction based on phase
+    const getInstruction = () => {
+        switch (session.exercisePhase) {
+            case 'inhale':
+                return 'Adem diep in...';
+            case 'hold':
+                return 'Houd vast!';
+            case 'exhale':
+                return 'Adem uit...';
+            default:
+                return 'Bereid je voor...';
+        }
     };
 
     return (
@@ -38,18 +86,18 @@ export default function PracticeExerciseScreen() {
                 Oefening actief
             </ThemedText>
 
-            {/* Timer Display - Placeholder */}
+            {/* Timer Display */}
             <ThemedText
                 style={styles.timerText}
-                accessibilityLabel="Timer"
+                accessibilityLabel={`Timer: ${formattedTime}`}
                 accessibilityLiveRegion="polite"
             >
-                0:00
+                {formattedTime}
             </ThemedText>
 
-            {/* Breathing Instruction - Placeholder */}
+            {/* Breathing Instruction */}
             <ThemedText style={styles.instructionText}>
-                Adem diep in en houd vast
+                {getInstruction()}
             </ThemedText>
 
             {/* Spacer */}
