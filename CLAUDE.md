@@ -153,9 +153,9 @@
 ```
 
 ### QGIT - Git Commit
-**When:** After QCHECK passes
+**When:** After QCHECK passes, for each set of changes create a commit and an appropriate message
 **Actions:**
-1. Stage changes: `git add -A`
+1. Stage changes: `git add`
 2. Review staged changes: `git diff --staged`
 3. Create conventional commit message:
     - Format: `type: description`
