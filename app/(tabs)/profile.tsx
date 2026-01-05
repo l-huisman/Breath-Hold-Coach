@@ -43,11 +43,6 @@ export default function ProfileScreen() {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const [tempDate, setTempDate] = useState<Date>(new Date());
 
-    const handleDatePress = () => {
-        setTempDate(dateOfBirth ? parseDate(dateOfBirth) || new Date() : new Date());
-        setShowDatePicker(true);
-    };
-
     const handleDateChange = (event: any, selectedDate?: Date) => {
         if (Platform.OS === 'android') {
             setShowDatePicker(false);
