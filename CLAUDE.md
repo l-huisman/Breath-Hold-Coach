@@ -1525,11 +1525,11 @@ const updateUser = (updates: Partial<UserDetails>) => {
 };
 
 // Usage - update single field
-updateUser({ name: 'Tineke' });
+updateUser({ name: 'Tineke Stoffers' });
 
 // Update multiple fields
 updateUser({
-   name: 'Tineke',
+   name: 'Tineke Stoffers',
    assistiveLearning: true
 });
 ```

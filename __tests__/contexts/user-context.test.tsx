@@ -221,7 +221,7 @@ describe('UserContext', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.user.name).toBe('Tineke');
+      expect(result.current.user.name).toBe('Tineke Stoffers');
       expect(result.current.settings.breathHoldGoal).toBe(45);
     });
 
@@ -240,7 +240,7 @@ describe('UserContext', () => {
       });
 
       // Should use defaults on error
-      expect(result.current.user.name).toBe('Tineke');
+      expect(result.current.user.name).toBe('Tineke Stoffers');
       expect(consoleError).toHaveBeenCalledWith(
         'Failed to load user data from storage:',
         expect.any(Error)
