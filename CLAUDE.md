@@ -2,22 +2,214 @@
 
 ## Quick Reference - Shortcut Commands
 
-### Core Workflow Commands
-- **QNEW**: Load this CLAUDE.md file in full before starting any task
-- **QPLAN**: Verify plan consistency with existing codebase, prefer minimal changes, reuse patterns
-- **QCODE**: Implement with automated checks (lint, type check, tests)
-- **QCHECK**: Perform skeptical senior developer review of all major changes
-- **QCHECKC**: Component-specific quality checklist (see Component Quality Checklist)
-- **QCHECKT**: Test-specific quality checklist (see Testing Standards)
-- **QUX**: Generate comprehensive QA test scenarios for mobile UX
-- **QGIT**: Create conventional commit with auto-stage and push
+### QNEW - Session Initialization
+**When:** Start of every new session or task
+**Actions:**
+1. Read this entire CLAUDE.md file
+2. Scan project structure: `app/`, `components/`, `contexts/`, `constants/`
+3. Check `package.json` for dependencies and scripts
+4. Review any recent changes in git: `git log --oneline -10`
+5. Confirm understanding of current project state
+
+### QPLAN - Planning Phase
+**When:** Before writing any code
+**Actions:**
+1. Restate the task in your own words to confirm understanding
+2. Identify which existing files will be modified vs. new files created
+3. Check for existing patterns in codebase that should be reused:
+    - Similar components in `components/`
+    - Existing context patterns in `contexts/`
+    - Theme constants in `constants/theme.ts`
+4. List potential impacts on other parts of the app
+5. Propose minimal changes - prefer extending over rewriting
+6. Identify accessibility requirements (Dutch labels, touch targets, contrast)
+7. Flag any privacy/GDPR concerns for medical data
+8. Present plan and wait for approval before proceeding
+
+**Output format:**
+```
+## Plan: [Task Name]
+### Files to modify: [list]
+### New files: [list]
+### Patterns to reuse: [list with file references]
+### Accessibility: [requirements]
+### Privacy concerns: [if any]
+### Estimated scope: [small/medium/large]
+```
+
+### QCODE - Implementation Phase
+**When:** After QPLAN is approved
+**Actions:**
+1. Implement changes following patterns from this CLAUDE.md
+2. After each file change, run these checks:
+    - `npx tsc --noEmit` (type check)
+    - `yarn lint` (linting)
+3. For new components, ensure:
+    - TypeScript interface for props (exported)
+    - `export function` (not const/arrow)
+    - `StyleSheet.create()` at bottom
+    - All accessibility props (role, label, hint in Dutch)
+    - Theme constants used (no hardcoded colors/fonts)
+4. For context changes, ensure:
+    - Custom hook with error handling
+    - Proper TypeScript types
+    - Partial update pattern
+5. Write tests alongside implementation (not after)
+6. Run `yarn test` to verify tests pass
+
+**Quality gates (must pass before completion):**
+- [ ] `npx tsc --noEmit` - no errors
+- [ ] `yarn lint` - no errors
+- [ ] `yarn test` - all tests pass
+
+### QCHECK - Senior Developer Review
+**When:** After QCODE, before committing
+**Mindset:** Be a skeptical senior developer looking for issues
+**Actions:**
+1. **Re-read the original requirements** - does implementation match?
+2. **Review each changed file** asking:
+    - Is this the simplest solution?
+    - Are there edge cases not handled?
+    - Will this break anything else?
+    - Is error handling complete?
+3. **Check for common issues:**
+    - Memory leaks (missing useEffect cleanup)
+    - Performance issues (inline functions, missing memoization)
+    - Missing loading/error states
+    - Hardcoded values that should be constants
+4. **Accessibility audit:**
+    - All interactive elements have accessibilityRole
+    - Labels are in Dutch and descriptive
+    - Touch targets ≥ 44x44 points
+    - Color contrast ≥ 4.5:1
+5. **Privacy check (medical app):**
+    - No patient data in console.log
+    - No sensitive data sent to external services
+6. **List all concerns** - even minor ones
+7. **Fix issues** or explain why they're acceptable
+
+**Output format:**
+```
+## QCHECK Review
+### ✅ Passed
+- [list what's good]
+### ⚠️ Concerns
+- [list issues and fixes applied]
+### 🔍 Edge cases considered
+- [list edge cases and how they're handled]
+```
+
+### QCHECKC - Component Quality Checklist
+**When:** After creating or modifying any component
+**Actions:** Go through each item in the Component Quality Checklist section:
+1. Readability & Structure (4 items)
+2. TypeScript Type Safety (4 items)
+3. Performance (4 items)
+4. Accessibility - CRITICAL (6 items)
+5. Styling (4 items)
+6. State & Side Effects (4 items)
+7. Error Handling (4 items)
+8. Testing (4 items)
+
+**Output:** Checklist with [x] for passed, [ ] for failed, and notes on any failures
+
+### QCHECKT - Test Quality Checklist
+**When:** After writing or modifying tests
+**Actions:**
+1. Verify test file is in correct location (`__tests__/`)
+2. Check each test against the 10 Testing Rules
+3. Ensure accessibility queries are used (`getByRole`, `getByLabelText`)
+4. Verify Arrange-Act-Assert pattern
+5. Check that error paths are tested, not just happy path
+6. Run tests: `yarn test [filename]`
+7. Check coverage: `yarn test:coverage`
+
+**Output:** List of tests reviewed with pass/fail status
+
+### QUX - UX Test Scenario Generation
+**When:** Before release or after major UI changes
+**Actions:**
+1. Identify all user flows in the feature
+2. For each flow, generate test scenarios covering:
+    - Happy path
+    - Error states (network, validation, etc.)
+    - Edge cases (empty states, max limits, etc.)
+    - Accessibility (VoiceOver/TalkBack navigation)
+    - Age-appropriate UX (50-75 age group):
+        - Large touch targets work correctly
+        - Text is readable
+        - No complex gestures required
+        - Feedback is clear and immediate
+3. Include device variations (iPhone SE vs Pro Max, Android variants)
+4. Document expected behavior for each scenario
+
+**Output format:**
+```
+## QUX Test Scenarios: [Feature Name]
+### Flow: [Flow Name]
+| Scenario | Steps | Expected Result | Age-Appropriate |
+|----------|-------|-----------------|-----------------|
+| ... | ... | ... | ✅/❌ |
+```
+
+### QGIT - Git Commit
+**When:** After QCHECK passes
+**Actions:**
+1. Stage changes: `git add -A`
+2. Review staged changes: `git diff --staged`
+3. Create conventional commit message:
+    - Format: `type: description`
+    - Types: `feat`, `fix`, `docs`, `test`, `refactor`, `style`, `chore`
+    - Description: lowercase, imperative mood, max 72 chars
+    - Reference issue if applicable: `feat: add timer component (#123)`
+4. Commit: `git commit -m "message"`
+5. Push: `git push`
+
+**Examples:**
+- `feat: add breathing exercise timer`
+- `fix: correct safe area insets on iPhone X`
+- `docs: update CLAUDE.md with animation patterns`
+- `test: add tests for user context`
+- `refactor: extract timer logic to custom hook`
+- `style: update button padding for accessibility`
+- `chore: update expo sdk to v50`
 
 ### Development Commands
-- **QRUN**: Start development server with platform selection
-- **QTEST**: Run test suite with coverage
-- **QLINT**: Run ESLint and fix auto-fixable issues
-- **QTYPE**: Run TypeScript type checking
-- **QBUILD**: Build app for specific platform (iOS/Android)
+
+**QRUN** - Start Development Server
+```bash
+npx expo start           # Default (shows QR code)
+npx expo start --ios     # iOS simulator
+npx expo start --android # Android emulator
+npx expo start --clear   # Clear cache first
+```
+
+**QTEST** - Run Tests
+```bash
+yarn test                    # All tests
+yarn test:watch              # Watch mode
+yarn test:coverage           # With coverage report
+yarn test [filename]         # Specific file
+yarn test --testNamePattern="timer"  # Pattern match
+```
+
+**QLINT** - Linting
+```bash
+yarn lint          # Check for issues
+yarn lint --fix    # Auto-fix what's possible
+```
+
+**QTYPE** - Type Checking
+```bash
+npx tsc --noEmit   # Check types without compiling
+```
+
+**QBUILD** - Build for Release
+```bash
+eas build --platform ios --profile preview     # iOS preview
+eas build --platform android --profile preview # Android preview
+eas build --platform all --profile production  # Production both
+```
 
 ---
 
@@ -749,55 +941,6 @@ export default function RootLayout() {
 - Reassuring, calm design (not playful)
 - Progress tracking for motivation
 - Clear explanation of DIBH importance
-
----
-
-## Common Commands
-
-```bash
-# Development
-npx expo start              # Start dev server
-npx expo start --ios        # iOS specific
-npx expo start --clear      # Clear cache
-
-# Testing
-yarn test                   # Run all tests
-yarn test:watch             # Watch mode
-yarn test:coverage          # With coverage
-
-# Code Quality
-yarn lint                   # Run linter
-yarn lint --fix             # Auto-fix
-npx tsc --noEmit            # Type check
-
-# Building
-eas build --platform ios    # Build iOS
-eas build --platform android # Build Android
-```
-
----
-
-## Workflow Integration
-
-### Development Flow
-1. Create feature branch from `development`
-2. Use QPLAN before coding
-3. Implement with QCODE
-4. Review with QCHECK and QCHECKC
-5. Test with QCHECKT
-6. Create PR to `development`
-7. GitHub Actions run automatically
-8. After PR approval, merge to `development`
-9. Weekly merge `development` → `master` for releases
-
-### Conventional Commits (QGIT)
-- `feat: add breathing exercise timer`
-- `fix: correct safe area insets on iPhone X`
-- `docs: update CLAUDE.md`
-- `test: add tests for user context`
-- `refactor: extract timer logic to custom hook`
-- `style: update button padding for accessibility`
-- `chore: update dependencies`
 
 ---
 
