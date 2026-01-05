@@ -31,10 +31,10 @@ describe('UserContext', () => {
       });
 
       expect(result.current.user).toEqual({
-        name: 'Tineke',
-        dateOfBirth: null,
-        patientNumber: '123456',
-        assistiveLearning: null,
+        name: 'Tineke Stoffers',
+        dateOfBirth: new Date('1960-01-01'),
+        patientNumber: '684651',
+        assistiveLearning: false,
       });
     });
 

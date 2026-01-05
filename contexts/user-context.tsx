@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
+import React, {createContext, useContext, useState, useEffect, useCallback, ReactNode} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PracticeMoment {
@@ -69,10 +69,10 @@ export const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
 ];
 
 const defaultUser: UserDetails = {
-    name: 'Tineke',
-    dateOfBirth: null,
-    patientNumber: '123456',
-    assistiveLearning: null,
+    name: 'Tineke Stoffers',
+    dateOfBirth: new Date('1960-01-01'),
+    patientNumber: '684651',
+    assistiveLearning: false,
 };
 
 const defaultPreferences: UserPreferences = {
@@ -111,11 +111,7 @@ export function UserProvider({children}: UserProviderProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     // Load data from AsyncStorage on mount
-    useEffect(() => {
-        loadAllData();
-    }, []);
-
-    const loadAllData = async () => {
+    const loadAllData = useCallback(async () => {
         try {
             const [userData, preferencesData, settingsData, progressData] = await Promise.all([
                 AsyncStorage.getItem(STORAGE_KEYS.USER),
@@ -150,7 +146,11 @@ export function UserProvider({children}: UserProviderProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        loadAllData();
+    }, [loadAllData]);
 
     const updateUser = async (updates: Partial<UserDetails>) => {
         const newUser = {...user, ...updates};
