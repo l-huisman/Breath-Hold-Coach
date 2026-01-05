@@ -269,7 +269,7 @@ export default function ProfileScreen() {
                                                 display="spinner"
                                                 onChange={handleDateChange}
                                                 maximumDate={new Date()}
-                                                minimumDate={new Date(1874, 0, 1)}
+                                                minimumDate={new Date(1909, 8, 21)}
                                                 accessibilityLabel="Selecteer geboortedatum"
                                             />
                                         </View>
@@ -281,7 +281,7 @@ export default function ProfileScreen() {
                                             display="default"
                                             onChange={handleDateChange}
                                             maximumDate={new Date()}
-                                            minimumDate={new Date(1874, 0, 1)}
+                                            minimumDate={new Date(1909, 8, 21)}
                                             accessibilityLabel="Selecteer geboortedatum"
                                         />
                                     )}
