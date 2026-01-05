@@ -38,10 +38,10 @@ export interface UserContextType {
     preferences: UserPreferences;
     settings: UserSettings;
     progress: UserProgress;
-    updateUser: (user: Partial<UserDetails>) => void;
-    updatePreferences: (preferences: Partial<UserPreferences>) => void;
-    updateSettings: (settings: Partial<UserSettings>) => void;
-    updateProgress: (progress: Partial<UserProgress>) => void;
+    updateUser: (user: Partial<UserDetails>) => Promise<void>
+    updatePreferences: (preferences: Partial<UserPreferences>) => Promise<void>
+    updateSettings: (settings: Partial<UserSettings>) => Promise<void>
+    updateProgress: (progress: Partial<UserProgress>) => Promise<void>
     isLoading: boolean;
 }
 
