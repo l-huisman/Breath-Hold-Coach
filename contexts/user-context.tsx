@@ -1,4 +1,5 @@
-import React, {createContext, useContext, useState, ReactNode} from 'react';
+import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PracticeMoment {
     id: string;
@@ -37,20 +38,29 @@ export interface UserContextType {
     preferences: UserPreferences;
     settings: UserSettings;
     progress: UserProgress;
-    updateUser: (user: Partial<UserDetails>) => void;
-    updatePreferences: (preferences: Partial<UserPreferences>) => void;
-    updateSettings: (settings: Partial<UserSettings>) => void;
-    updateProgress: (progress: Partial<UserProgress>) => void;
+    updateUser: (user: Partial<UserDetails>) => Promise<void>
+    updatePreferences: (preferences: Partial<UserPreferences>) => Promise<void>
+    updateSettings: (settings: Partial<UserSettings>) => Promise<void>
+    updateProgress: (progress: Partial<UserProgress>) => Promise<void>
+    isLoading: boolean;
 }
 
+// Storage keys
+const STORAGE_KEYS = {
+    USER: '@breathhold:user',
+    PREFERENCES: '@breathhold:preferences',
+    SETTINGS: '@breathhold:settings',
+    PROGRESS: '@breathhold:progress',
+};
+
 // Default practice moments for non-smokers (2 sessions per day)
-const defaultPracticeMomentsNormalLearning: PracticeMoment[] = [
+export const defaultPracticeMomentsNormalLearning: PracticeMoment[] = [
     {id: '1', time: '09:00', enabled: true},
     {id: '2', time: '18:00', enabled: true},
 ];
 
 // Default practice moments for smokers (more frequent, smaller sessions)
-const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
+export const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
     {id: '1', time: '08:00', enabled: true},
     {id: '2', time: '11:00', enabled: true},
     {id: '3', time: '14:00', enabled: true},
@@ -59,10 +69,10 @@ const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
 ];
 
 const defaultUser: UserDetails = {
-    name: 'Tineke',
-    dateOfBirth: null,
-    patientNumber: '123456',
-    assistiveLearning: null,
+    name: 'Tineke Stoffers',
+    dateOfBirth: new Date('1960-01-01'),
+    patientNumber: '684651',
+    assistiveLearning: false,
 };
 
 const defaultPreferences: UserPreferences = {
@@ -87,8 +97,6 @@ const defaultProgress: UserProgress = {
     streakDays: 0,
 };
 
-export {defaultPracticeMomentsNormalLearning, defaultPracticeMomentsAssistiveLearning};
-
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 interface UserProviderProps {
@@ -100,21 +108,92 @@ export function UserProvider({children}: UserProviderProps) {
     const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
     const [settings, setSettings] = useState<UserSettings>(defaultSettings);
     const [progress, setProgress] = useState<UserProgress>(defaultProgress);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const updateUser = (updates: Partial<UserDetails>) => {
-        setUser(prev => ({...prev, ...updates}));
+    // Load data from AsyncStorage on mount
+    useEffect(() => {
+        const loadAllData = async () => {
+            try {
+                const [userData, preferencesData, settingsData, progressData] = await Promise.all([
+                    AsyncStorage.getItem(STORAGE_KEYS.USER),
+                    AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES),
+                    AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
+                    AsyncStorage.getItem(STORAGE_KEYS.PROGRESS),
+                ]);
+
+                if (userData) {
+                    const parsed = JSON.parse(userData);
+                    // Convert dateOfBirth string back to Date
+                    if (parsed.dateOfBirth) {
+                        parsed.dateOfBirth = new Date(parsed.dateOfBirth);
+                    }
+                    setUser(parsed);
+                }
+
+                if (preferencesData) {
+                    setPreferences(JSON.parse(preferencesData));
+                }
+
+                if (settingsData) {
+                    setSettings(JSON.parse(settingsData));
+                }
+
+                if (progressData) {
+                    setProgress(JSON.parse(progressData));
+                }
+            } catch (error) {
+                console.error('Failed to load user data from storage:', error);
+                // Keep defaults on error
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        loadAllData();
+    }, []);
+
+    const updateUser = async (updates: Partial<UserDetails>) => {
+        const newUser = {...user, ...updates};
+        setUser(newUser);
+
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser));
+        } catch (error) {
+            console.error('Failed to save user data:', error);
+        }
     };
 
-    const updatePreferences = (updates: Partial<UserPreferences>) => {
-        setPreferences(prev => ({...prev, ...updates}));
+    const updatePreferences = async (updates: Partial<UserPreferences>) => {
+        const newPreferences = {...preferences, ...updates};
+        setPreferences(newPreferences);
+
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.PREFERENCES, JSON.stringify(newPreferences));
+        } catch (error) {
+            console.error('Failed to save preferences:', error);
+        }
     };
 
-    const updateSettings = (updates: Partial<UserSettings>) => {
-        setSettings(prev => ({...prev, ...updates}));
+    const updateSettings = async (updates: Partial<UserSettings>) => {
+        const newSettings = {...settings, ...updates};
+        setSettings(newSettings);
+
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(newSettings));
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+        }
     };
 
-    const updateProgress = (updates: Partial<UserProgress>) => {
-        setProgress(prev => ({...prev, ...updates}));
+    const updateProgress = async (updates: Partial<UserProgress>) => {
+        const newProgress = {...progress, ...updates};
+        setProgress(newProgress);
+
+        try {
+            await AsyncStorage.setItem(STORAGE_KEYS.PROGRESS, JSON.stringify(newProgress));
+        } catch (error) {
+            console.error('Failed to save progress:', error);
+        }
     };
 
     return (
@@ -128,6 +207,7 @@ export function UserProvider({children}: UserProviderProps) {
                 updatePreferences,
                 updateSettings,
                 updateProgress,
+                isLoading,
             }}
         >
             {children}

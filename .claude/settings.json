@@ -1,0 +1,24 @@
+{
+  "allowed_tools": [
+    "bash",
+    "str_replace",
+    "create_file",
+    "view"
+  ],
+  "auto_context": {
+    "enabled": true,
+    "files": [
+      "CLAUDE-react-native.md",
+      "package.json",
+      "tsconfig.json",
+      "app.json",
+      "constants/theme.ts",
+      "contexts/user-context.tsx"
+    ]
+  },
+  "working_directory": ".",
+  "typescript": {
+    "enabled": true,
+    "strict": true
+  }
+}
