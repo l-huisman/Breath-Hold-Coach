@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState, useEffect, useCallback, ReactNode} from 'react';
+import React, {createContext, useContext, useState, useEffect, ReactNode} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PracticeMoment {
@@ -111,46 +111,46 @@ export function UserProvider({children}: UserProviderProps) {
     const [isLoading, setIsLoading] = useState(true);
 
     // Load data from AsyncStorage on mount
-    const loadAllData = useCallback(async () => {
-        try {
-            const [userData, preferencesData, settingsData, progressData] = await Promise.all([
-                AsyncStorage.getItem(STORAGE_KEYS.USER),
-                AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES),
-                AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
-                AsyncStorage.getItem(STORAGE_KEYS.PROGRESS),
-            ]);
-
-            if (userData) {
-                const parsed = JSON.parse(userData);
-                // Convert dateOfBirth string back to Date
-                if (parsed.dateOfBirth) {
-                    parsed.dateOfBirth = new Date(parsed.dateOfBirth);
-                }
-                setUser(parsed);
-            }
-
-            if (preferencesData) {
-                setPreferences(JSON.parse(preferencesData));
-            }
-
-            if (settingsData) {
-                setSettings(JSON.parse(settingsData));
-            }
-
-            if (progressData) {
-                setProgress(JSON.parse(progressData));
-            }
-        } catch (error) {
-            console.error('Failed to load user data from storage:', error);
-            // Keep defaults on error
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
     useEffect(() => {
+        const loadAllData = async () => {
+            try {
+                const [userData, preferencesData, settingsData, progressData] = await Promise.all([
+                    AsyncStorage.getItem(STORAGE_KEYS.USER),
+                    AsyncStorage.getItem(STORAGE_KEYS.PREFERENCES),
+                    AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
+                    AsyncStorage.getItem(STORAGE_KEYS.PROGRESS),
+                ]);
+
+                if (userData) {
+                    const parsed = JSON.parse(userData);
+                    // Convert dateOfBirth string back to Date
+                    if (parsed.dateOfBirth) {
+                        parsed.dateOfBirth = new Date(parsed.dateOfBirth);
+                    }
+                    setUser(parsed);
+                }
+
+                if (preferencesData) {
+                    setPreferences(JSON.parse(preferencesData));
+                }
+
+                if (settingsData) {
+                    setSettings(JSON.parse(settingsData));
+                }
+
+                if (progressData) {
+                    setProgress(JSON.parse(progressData));
+                }
+            } catch (error) {
+                console.error('Failed to load user data from storage:', error);
+                // Keep defaults on error
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
         loadAllData();
-    }, [loadAllData]);
+    }, []);
 
     const updateUser = async (updates: Partial<UserDetails>) => {
         const newUser = {...user, ...updates};
