@@ -72,97 +72,101 @@ export default function ProfileScreen() {
         setAssistiveLearning(user.assistiveLearning);
     }, [user, settings]);
 
+    const validateForm = (): {valid: boolean; trimmedName?: string; breathHoldValue?: number; dailyGoalValue?: number; parsedDate?: Date | null} => {
+        // Validate name
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+            Alert.alert('Ongeldige waarde', 'Naam mag niet leeg zijn.');
+            return {valid: false};
+        }
+
+        if (trimmedName.length < 2 || trimmedName.length > 100) {
+            Alert.alert(
+                'Ongeldige waarde',
+                'Naam moet tussen 2 en 100 tekens lang zijn.'
+            );
+            return {valid: false};
+        }
+
+        // Validate breath hold goal
+        const breathHoldValue = parseInt(breathHoldGoal, 10);
+        if (isNaN(breathHoldValue) || breathHoldValue < 1 || breathHoldValue > 300) {
+            Alert.alert(
+                'Ongeldige waarde',
+                'Ademhoud doel moet tussen 1 en 300 seconden zijn.'
+            );
+            return {valid: false};
+        }
+
+        // Validate daily goal
+        const dailyGoalValue = parseInt(dailyGoal, 10);
+        if (isNaN(dailyGoalValue) || dailyGoalValue < 1 || dailyGoalValue > 60) {
+            Alert.alert(
+                'Ongeldige waarde',
+                'Dagelijks doel moet tussen 1 en 60 seconden zijn.'
+            );
+            return {valid: false};
+        }
+
+        // Parse and validate date if provided
+        let parsedDate: Date | null = null;
+        if (dateOfBirth) {
+            parsedDate = parseDate(dateOfBirth);
+            if (!parsedDate) {
+                Alert.alert(
+                    'Ongeldige datum',
+                    'Gebruik het formaat DD-MM-JJJJ voor geboortedatum.'
+                );
+                return {valid: false};
+            }
+
+            // Validate date is reasonable
+            const now = new Date();
+            const age = now.getFullYear() - parsedDate.getFullYear();
+            if (age < 0 || age > 150) {
+                Alert.alert(
+                    'Ongeldige datum',
+                    'Geboortedatum moet tussen nu en 150 jaar geleden zijn.'
+                );
+                return {valid: false};
+            }
+
+            if (parsedDate > now) {
+                Alert.alert(
+                    'Ongeldige datum',
+                    'Geboortedatum kan niet in de toekomst liggen.'
+                );
+                return {valid: false};
+            }
+        }
+
+        return {valid: true, trimmedName, breathHoldValue, dailyGoalValue, parsedDate};
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
 
         try {
-            // Validate name
-            const trimmedName = name.trim();
-            if (!trimmedName) {
-                Alert.alert('Ongeldige waarde', 'Naam mag niet leeg zijn.');
-                setIsSaving(false);
+            const validation = validateForm();
+            if (!validation.valid) {
                 return;
             }
 
-            if (trimmedName.length < 2 || trimmedName.length > 100) {
-                Alert.alert(
-                    'Ongeldige waarde',
-                    'Naam moet tussen 2 en 100 tekens lang zijn.'
-                );
-                setIsSaving(false);
-                return;
-            }
-
-            // Validate breath hold goal
-            const breathHoldValue = parseInt(breathHoldGoal, 10);
-            if (isNaN(breathHoldValue) || breathHoldValue < 1 || breathHoldValue > 300) {
-                Alert.alert(
-                    'Ongeldige waarde',
-                    'Ademhoud doel moet tussen 1 en 300 seconden zijn.'
-                );
-                setIsSaving(false);
-                return;
-            }
-
-            // Validate daily goal
-            const dailyGoalValue = parseInt(dailyGoal, 10);
-            if (isNaN(dailyGoalValue) || dailyGoalValue < 1 || dailyGoalValue > 60) {
-                Alert.alert(
-                    'Ongeldige waarde',
-                    'Dagelijks doel moet tussen 1 en 60 seconden zijn.'
-                );
-                setIsSaving(false);
-                return;
-            }
-
-            // Parse and validate date if provided
-            let parsedDate: Date | null = null;
-            if (dateOfBirth) {
-                parsedDate = parseDate(dateOfBirth);
-                if (!parsedDate) {
-                    Alert.alert(
-                        'Ongeldige datum',
-                        'Gebruik het formaat DD-MM-JJJJ voor geboortedatum.'
-                    );
-                    setIsSaving(false);
-                    return;
-                }
-
-                // Validate date is reasonable
-                const now = new Date();
-                const age = now.getFullYear() - parsedDate.getFullYear();
-                if (age < 0 || age > 150) {
-                    Alert.alert(
-                        'Ongeldige datum',
-                        'Geboortedatum moet tussen nu en 150 jaar geleden zijn.'
-                    );
-                    setIsSaving(false);
-                    return;
-                }
-
-                if (parsedDate > now) {
-                    Alert.alert(
-                        'Ongeldige datum',
-                        'Geboortedatum kan niet in de toekomst liggen.'
-                    );
-                    setIsSaving(false);
-                    return;
-                }
-            }
+            const {trimmedName, breathHoldValue, dailyGoalValue, parsedDate} = validation;
 
             // Check if assistiveLearning changed - update practice moments accordingly
             const assistiveLearningChanged = assistiveLearning !== user.assistiveLearning;
 
             // Update context (all updates are now async and persist to AsyncStorage)
             await updateUser({
-                name: trimmedName,
-                dateOfBirth: parsedDate,
+                name: trimmedName!,
+                dateOfBirth: parsedDate ?? null,
                 assistiveLearning,
             });
 
             await updateSettings({
-                breathHoldGoal: breathHoldValue,
-                dailyGoal: dailyGoalValue,
+                breathHoldGoal: breathHoldValue!,
+                dailyGoal: dailyGoalValue!,
             });
 
             // Update practice moments if assistiveLearning changed
