@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, type PressableProps, StyleSheet, Text,} from 'react-native';
+import {Pressable, type PressableProps, StyleSheet, Text} from 'react-native';
 import {Colors, Fonts} from '@/constants/theme';
 
 export interface OptionButtonProps extends Omit<PressableProps, 'onPress'> {
@@ -8,9 +8,10 @@ export interface OptionButtonProps extends Omit<PressableProps, 'onPress'> {
      */
     title: string;
     /**
-     * Optional description text providing more context
+     * Optional description lines displayed one-per-row
+     * Accepts either a single string or an array of strings.
      */
-    description?: string;
+    description?: string | string[];
     /**
      * Whether this option is currently selected
      */
@@ -21,14 +22,25 @@ export interface OptionButtonProps extends Omit<PressableProps, 'onPress'> {
     onPress: () => void;
 }
 
-export function OptionButton({
+export const OptionButton = ({
                                  title,
                                  description,
                                  selected,
                                  onPress,
                                  style,
                                  ...rest
-                             }: OptionButtonProps) {
+                             }: OptionButtonProps) => {
+    // Normalize description to an array so `.join` / `.map` are always safe
+    const descriptionLines = Array.isArray(description)
+        ? description
+        : typeof description === 'string'
+            ? [description]
+            : [];
+
+    const accessibilityHint = descriptionLines.length
+        ? `${descriptionLines.join(', ')}. Tik om deze optie te selecteren`
+        : 'Tik om deze optie te selecteren';
+
     return (
         <Pressable
             style={({pressed}) => [
@@ -40,7 +52,7 @@ export function OptionButton({
             onPress={onPress}
             accessibilityRole="button"
             accessibilityLabel={title}
-            accessibilityHint={description || 'Tik om deze optie te selecteren'}
+            accessibilityHint={accessibilityHint}
             accessibilityState={{selected}}
             {...rest}
         >
@@ -54,20 +66,21 @@ export function OptionButton({
                 {title}
             </Text>
 
-            {/* Description */}
-            {description && (
+            {/* Description lines (each on its own row) */}
+            {descriptionLines.map((line, idx) => (
                 <Text
+                    key={idx}
                     style={[
                         styles.description,
                         selected ? styles.descriptionSelected : styles.descriptionUnselected,
                     ]}
                 >
-                    {description}
+                    {line}
                 </Text>
-            )}
+            ))}
         </Pressable>
     );
-}
+};
 
 const styles = StyleSheet.create({
     button: {
@@ -87,8 +100,7 @@ const styles = StyleSheet.create({
     buttonUnselected: {
         backgroundColor: Colors.light.background,
     },
-    buttonPressed: {
-    },
+    buttonPressed: {},
     title: {
         fontFamily: Fonts.semiBold,
         fontSize: 24,

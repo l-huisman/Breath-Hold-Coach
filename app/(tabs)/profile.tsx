@@ -342,7 +342,7 @@ export default function ProfileScreen() {
 
                             <OptionButton
                                 title="Heb je last van longklachten?"
-                                description="Bijvoorbeeld bij astma of langdurig roken. De app begeleidt je in kleinere stappen met extra oefenmomenten."
+                                description={["Bijvoorbeeld bij astma of langdurig roken.", "De app begeleidt je in kleinere stappen met extra oefenmomenten."]}
                                 selected={assistiveLearning === true}
                                 onPress={() => setAssistiveLearning(true)}
                                 disabled={isSaving}
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     },
     sectionDescription: {
         fontSize: 14,
-        color: Colors.light.textMuted,
+        color: Colors.light.text,
         marginBottom: 8,
     },
     spacer: {
