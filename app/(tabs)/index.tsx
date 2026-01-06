@@ -47,7 +47,7 @@ export default function HomeScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Start oefenen, tik om te beginnen met de ademhalingsoefening"
                     >
-                        <Icon name="play" size={64} color={Colors.light.text} />
+                        <Icon name="play.fill" size={64} color={Colors.light.text} />
                     </Pressable>
                     <ThemedText style={styles.startButtonLabel}>Start Oefenen</ThemedText>
                 </View>

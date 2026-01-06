@@ -7,15 +7,18 @@ import { ThemedView } from '@/components/themed-view';
 import { Button } from '@/components/button';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
+import { useAudio } from '@/contexts/audio-context';
+import { AUDIO_SEQUENCES } from '@/constants/audio';
 
 /**
  * Main exercise screen - full-screen immersive experience.
  * No navigation chrome (handled by layout based on route).
  * Breathing animation will be added in issue #45.
- * Audio cues will be added in issue #46.
+ * Audio cues implemented in issue #45.
  */
 export default function PracticeExerciseScreen() {
     const { session, getCurrentBreathHoldDuration, startBreathHold, pauseExercise, finishExercise } = usePracticeSession();
+    const { playSequence, stop } = useAudio();
     const [displayTime, setDisplayTime] = useState(0);
 
     // Timer for UI updates - runs when holding breath
@@ -44,12 +47,32 @@ export default function PracticeExerciseScreen() {
         }
     }, [session.currentState, session.exercisePhase, startBreathHold]);
 
+    // Play audio cues based on exercise phase transitions
+    useEffect(() => {
+        if (session.currentState !== 'exercise') {
+            return;
+        }
+
+        if (session.exercisePhase === 'inhale' && session.breathingCyclesCompleted < 3) {
+            // First 3 cycles: practice breathing pattern
+            playSequence(AUDIO_SEQUENCES.breathCycle);
+        } else if (session.exercisePhase === 'inhale' && session.breathingCyclesCompleted === 3) {
+            // Final cycle: prepare for hold
+            playSequence(AUDIO_SEQUENCES.finalInhale);
+        } else if (session.exercisePhase === 'hold') {
+            // Start holding breath
+            playSequence(AUDIO_SEQUENCES.startHold);
+        }
+    }, [session.exercisePhase, session.currentState, session.breathingCyclesCompleted, playSequence]);
+
     const handlePause = () => {
+        stop(); // Stop audio when pausing
         pauseExercise();
         router.push('/practice/paused' as any);
     };
 
     const handleStop = () => {
+        stop(); // Stop audio when stopping exercise
         finishExercise();
         // Use replace to prevent back navigation
         router.replace('/practice/finish' as any);

@@ -7,6 +7,7 @@ import { BackButton } from '@/components/back-button';
 import { Navbar } from '@/components/navbar';
 import { Colors } from '@/constants/theme';
 import { PracticeSessionProvider, SessionResults } from '@/contexts/practice-session-context';
+import { AudioProvider } from '@/contexts/audio-context';
 import { useUser } from '@/contexts/user-context';
 
 /**
@@ -65,22 +66,24 @@ export default function PracticeLayout() {
 
     return (
         <PracticeSessionProvider onSessionComplete={handleSessionComplete}>
-            <View style={[styles.container, { paddingTop: isFullScreen ? 0 : insets.top }]}>
-                {/* Back Button - hidden on full-screen routes */}
-                {!isFullScreen && (
-                    <View style={styles.backButtonContainer}>
-                        <BackButton />
+            <AudioProvider>
+                <View style={[styles.container, { paddingTop: isFullScreen ? 0 : insets.top }]}>
+                    {/* Back Button - hidden on full-screen routes */}
+                    {!isFullScreen && (
+                        <View style={styles.backButtonContainer}>
+                            <BackButton />
+                        </View>
+                    )}
+
+                    {/* Screen Content */}
+                    <View style={styles.content}>
+                        <Slot />
                     </View>
-                )}
 
-                {/* Screen Content */}
-                <View style={styles.content}>
-                    <Slot />
+                    {/* Bottom Navigation - hidden on full-screen routes */}
+                    {!isFullScreen && <Navbar />}
                 </View>
-
-                {/* Bottom Navigation - hidden on full-screen routes */}
-                {!isFullScreen && <Navbar />}
-            </View>
+            </AudioProvider>
         </PracticeSessionProvider>
     );
 }
