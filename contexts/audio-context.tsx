@@ -1,10 +1,13 @@
 /**
  * Audio context for managing audio playback throughout the practice module.
- * Provides centralized audio state management and Sound instance lifecycle.
+ * Provides centralized audio state management and AudioPlayer instance lifecycle.
+ *
+ * Uses expo-audio (SDK 54+) instead of deprecated expo-av.
  */
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect, ReactNode } from 'react';
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import type { AudioPlayer, AudioStatus } from 'expo-audio';
 import { AUDIO_MANIFEST } from '@/constants/audio';
 import { AudioId } from '@/types/audio';
 
@@ -32,7 +35,7 @@ interface AudioProviderProps {
 
 /**
  * Audio provider component
- * Manages audio playback state and Sound instances for the practice module
+ * Manages audio playback state and AudioPlayer instances for the practice module
  */
 export function AudioProvider({ children }: AudioProviderProps) {
 	const [isPlaying, setIsPlaying] = useState(false);
@@ -40,18 +43,25 @@ export function AudioProvider({ children }: AudioProviderProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [queue, setQueue] = useState<AudioId[]>([]);
 
-	// Use ref to avoid re-renders when Sound instance changes
-	const soundRef = useRef<Audio.Sound | null>(null);
+	// Use ref to avoid re-renders when AudioPlayer instance changes
+	const playerRef = useRef<AudioPlayer | null>(null);
 	const lastPlayedAudioIdRef = useRef<AudioId | null>(null);
+	const queueRef = useRef<AudioId[]>([]);
+	const playAudioRef = useRef<((audioId: AudioId) => Promise<void>) | null>(null);
+	const statusSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+
+	// Sync queueRef with queue state
+	useEffect(() => {
+		queueRef.current = queue;
+	}, [queue]);
 
 	// Initialize audio mode on mount
 	useEffect(() => {
 		const initializeAudio = async () => {
 			try {
-				await Audio.setAudioModeAsync({
-					playsInSilentModeIOS: true, // Critical: Medical app needs audio in silent mode
-					staysActiveInBackground: false, // Don't play audio when app is backgrounded
-					shouldDuckAndroid: true, // Lower other apps' audio when playing
+				await setAudioModeAsync({
+					playsInSilentMode: true, // Critical: Medical app needs audio in silent mode
+					shouldRouteThroughEarpiece: false,
 				});
 			} catch (error) {
 				console.error('Failed to initialize audio mode:', (error as Error).message);
@@ -62,46 +72,50 @@ export function AudioProvider({ children }: AudioProviderProps) {
 
 		// Cleanup on unmount
 		return () => {
-			if (soundRef.current) {
-				soundRef.current.unloadAsync().catch((error) => {
-					console.error('Failed to unload sound on unmount:', (error as Error).message);
-				});
+			if (statusSubscriptionRef.current) {
+				statusSubscriptionRef.current.remove();
+				statusSubscriptionRef.current = null;
+			}
+			if (playerRef.current) {
+				playerRef.current.release();
+				playerRef.current = null;
 			}
 		};
 	}, []);
 
 	/**
-	 * Playback status update callback
-	 * Handles sequence playback and state updates
+	 * Handle audio status updates
+	 * Called when audio player status changes
 	 */
-	const onPlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-		if (!status.isLoaded) {
-			setIsPlaying(false);
-			return;
-		}
-
-		setIsPlaying(status.isPlaying);
+	const handleStatusChange = useCallback((status: AudioStatus) => {
+		setIsPlaying(status.playing);
 
 		// Handle sequence: play next audio when current finishes
 		if (status.didJustFinish) {
-			// Unload finished sound
-			if (soundRef.current) {
-				soundRef.current.unloadAsync().catch((error) => {
-					console.error('Failed to unload finished sound:', (error as Error).message);
-				});
-				soundRef.current = null;
+			// Release finished player
+			if (statusSubscriptionRef.current) {
+				statusSubscriptionRef.current.remove();
+				statusSubscriptionRef.current = null;
+			}
+			if (playerRef.current) {
+				playerRef.current.release();
+				playerRef.current = null;
 			}
 
 			// Play next in queue if available
-			if (queue.length > 0) {
-				const nextAudioId = queue[0];
+			const currentQueue = queueRef.current;
+			if (currentQueue.length > 0) {
+				const nextAudioId = currentQueue[0];
 				setQueue((q) => q.slice(1));
-				playAudio(nextAudioId);
+				// Use ref to avoid circular dependency
+				if (playAudioRef.current) {
+					playAudioRef.current(nextAudioId);
+				}
 			} else {
 				setCurrentAudioId(null);
 			}
 		}
-	}, [queue]);
+	}, []);
 
 	/**
 	 * Internal function to play a single audio file
@@ -117,22 +131,29 @@ export function AudioProvider({ children }: AudioProviderProps) {
 				throw new Error(`Audio ID "${audioId}" not found in manifest`);
 			}
 
-			// Unload previous sound if exists
-			if (soundRef.current) {
-				await soundRef.current.unloadAsync();
-				soundRef.current = null;
+			// Release previous player if exists
+			if (statusSubscriptionRef.current) {
+				statusSubscriptionRef.current.remove();
+				statusSubscriptionRef.current = null;
+			}
+			if (playerRef.current) {
+				playerRef.current.release();
+				playerRef.current = null;
 			}
 
-			// Load and play new sound
-			const { sound } = await Audio.Sound.createAsync(
-				audioMetadata.source,
-				{ shouldPlay: true },
-				onPlaybackStatusUpdate
-			);
+			// Create new audio player with the source using createAudioPlayer
+			const player = createAudioPlayer(audioMetadata.source);
 
-			soundRef.current = sound;
+			// Subscribe to status updates
+			statusSubscriptionRef.current = player.addListener('playbackStatusUpdate', handleStatusChange);
+
+			// Store player reference
+			playerRef.current = player;
 			setCurrentAudioId(audioId);
 			lastPlayedAudioIdRef.current = audioId;
+
+			// Start playback
+			player.play();
 			setIsPlaying(true);
 		} catch (error) {
 			console.error('Audio playback failed:', (error as Error).message);
@@ -143,7 +164,12 @@ export function AudioProvider({ children }: AudioProviderProps) {
 			// Graceful degradation: Clear queue on error
 			setQueue([]);
 		}
-	}, [onPlaybackStatusUpdate]);
+	}, [handleStatusChange]);
+
+	// Store playAudio in ref for use in handleStatusChange
+	useEffect(() => {
+		playAudioRef.current = playAudio;
+	}, [playAudio]);
 
 	/**
 	 * Play a single audio file
@@ -176,8 +202,8 @@ export function AudioProvider({ children }: AudioProviderProps) {
 	 */
 	const pause = useCallback(async () => {
 		try {
-			if (soundRef.current) {
-				await soundRef.current.pauseAsync();
+			if (playerRef.current) {
+				playerRef.current.pause();
 				setIsPlaying(false);
 			}
 		} catch (error) {
@@ -191,8 +217,8 @@ export function AudioProvider({ children }: AudioProviderProps) {
 	 */
 	const resume = useCallback(async () => {
 		try {
-			if (soundRef.current) {
-				await soundRef.current.playAsync();
+			if (playerRef.current) {
+				playerRef.current.play();
 				setIsPlaying(true);
 			}
 		} catch (error) {
@@ -206,10 +232,13 @@ export function AudioProvider({ children }: AudioProviderProps) {
 	 */
 	const stop = useCallback(async () => {
 		try {
-			if (soundRef.current) {
-				await soundRef.current.stopAsync();
-				await soundRef.current.unloadAsync();
-				soundRef.current = null;
+			if (statusSubscriptionRef.current) {
+				statusSubscriptionRef.current.remove();
+				statusSubscriptionRef.current = null;
+			}
+			if (playerRef.current) {
+				playerRef.current.release();
+				playerRef.current = null;
 			}
 			setIsPlaying(false);
 			setCurrentAudioId(null);

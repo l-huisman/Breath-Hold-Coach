@@ -2,32 +2,23 @@
  * Unit tests for AudioContext and useAudio hook
  */
 
-import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { AudioProvider, useAudio } from '@/contexts/audio-context';
-import { Audio } from 'expo-av';
 
-// Mock expo-av
-jest.mock('expo-av', () => {
-	const mockSound = {
-		playAsync: jest.fn().mockResolvedValue(undefined),
-		pauseAsync: jest.fn().mockResolvedValue(undefined),
-		stopAsync: jest.fn().mockResolvedValue(undefined),
-		unloadAsync: jest.fn().mockResolvedValue(undefined),
-		setOnPlaybackStatusUpdate: jest.fn(),
-	};
+// Mock expo-audio - must use inline functions for jest.mock hoisting
 
-	return {
-		Audio: {
-			Sound: {
-				createAsync: jest.fn().mockResolvedValue({
-					sound: mockSound,
-				}),
-			},
-			setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
-		},
-	};
-});
+jest.mock('expo-audio', () => ({
+	createAudioPlayer: jest.fn(() => ({
+		play: jest.fn(),
+		pause: jest.fn(),
+		release: jest.fn(),
+		addListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+	})),
+	setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Get the mocked functions for assertions
+const expoAudio = jest.requireMock('expo-audio');
 
 // Mock audio manifest
 jest.mock('@/constants/audio', () => ({
@@ -60,8 +51,23 @@ jest.mock('@/constants/audio', () => ({
 }));
 
 describe('AudioContext', () => {
+	let mockPlayerInstance: {
+		play: jest.Mock;
+		pause: jest.Mock;
+		release: jest.Mock;
+		addListener: jest.Mock;
+	};
+
 	beforeEach(() => {
 		jest.clearAllMocks();
+		// Create fresh mock player instance for each test
+		mockPlayerInstance = {
+			play: jest.fn(),
+			pause: jest.fn(),
+			release: jest.fn(),
+			addListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+		};
+		expoAudio.createAudioPlayer.mockReturnValue(mockPlayerInstance);
 	});
 
 	describe('AudioProvider', () => {
@@ -71,10 +77,9 @@ describe('AudioContext', () => {
 			});
 
 			await waitFor(() => {
-				expect(Audio.setAudioModeAsync).toHaveBeenCalledWith({
-					playsInSilentModeIOS: true,
-					staysActiveInBackground: false,
-					shouldDuckAndroid: true,
+				expect(expoAudio.setAudioModeAsync).toHaveBeenCalledWith({
+					playsInSilentMode: true,
+					shouldRouteThroughEarpiece: false,
 				});
 			});
 		});
@@ -114,11 +119,7 @@ describe('AudioContext', () => {
 				await result.current.play('volume-check');
 			});
 
-			expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-				{ uri: 'mock://volume-check.mp3' },
-				{ shouldPlay: true },
-				expect.any(Function)
-			);
+			expect(expoAudio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'mock://volume-check.mp3' });
 		});
 
 		it('should update currentAudioId when playing', async () => {
@@ -149,7 +150,9 @@ describe('AudioContext', () => {
 
 		it('should handle playback error gracefully', async () => {
 			const mockError = new Error('Playback failed');
-			(Audio.Sound.createAsync as jest.Mock).mockRejectedValueOnce(mockError);
+			expoAudio.createAudioPlayer.mockImplementationOnce(() => {
+				throw mockError;
+			});
 
 			const { result } = renderHook(() => useAudio(), {
 				wrapper: AudioProvider,
@@ -174,11 +177,7 @@ describe('AudioContext', () => {
 				await result.current.playSequence(['inhale-exhale', 'and-again']);
 			});
 
-			expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-				{ uri: 'mock://inhale-exhale.mp3' },
-				{ shouldPlay: true },
-				expect.any(Function)
-			);
+			expect(expoAudio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'mock://inhale-exhale.mp3' });
 			expect(result.current.currentAudioId).toBe('inhale-exhale');
 		});
 
@@ -191,23 +190,12 @@ describe('AudioContext', () => {
 				await result.current.playSequence([]);
 			});
 
-			expect(Audio.Sound.createAsync).not.toHaveBeenCalled();
+			expect(expoAudio.createAudioPlayer).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('pause', () => {
 		it('should pause current audio', async () => {
-			const mockSound = {
-				playAsync: jest.fn().mockResolvedValue(undefined),
-				pauseAsync: jest.fn().mockResolvedValue(undefined),
-				stopAsync: jest.fn().mockResolvedValue(undefined),
-				unloadAsync: jest.fn().mockResolvedValue(undefined),
-			};
-
-			(Audio.Sound.createAsync as jest.Mock).mockResolvedValueOnce({
-				sound: mockSound,
-			});
-
 			const { result } = renderHook(() => useAudio(), {
 				wrapper: AudioProvider,
 			});
@@ -220,23 +208,12 @@ describe('AudioContext', () => {
 				await result.current.pause();
 			});
 
-			expect(mockSound.pauseAsync).toHaveBeenCalled();
+			expect(mockPlayerInstance.pause).toHaveBeenCalled();
 		});
 	});
 
 	describe('resume', () => {
 		it('should resume paused audio', async () => {
-			const mockSound = {
-				playAsync: jest.fn().mockResolvedValue(undefined),
-				pauseAsync: jest.fn().mockResolvedValue(undefined),
-				stopAsync: jest.fn().mockResolvedValue(undefined),
-				unloadAsync: jest.fn().mockResolvedValue(undefined),
-			};
-
-			(Audio.Sound.createAsync as jest.Mock).mockResolvedValueOnce({
-				sound: mockSound,
-			});
-
 			const { result } = renderHook(() => useAudio(), {
 				wrapper: AudioProvider,
 			});
@@ -247,23 +224,13 @@ describe('AudioContext', () => {
 				await result.current.resume();
 			});
 
-			expect(mockSound.playAsync).toHaveBeenCalledTimes(1); // Called by resume, not play
+			// play() is called during initial play AND during resume
+			expect(mockPlayerInstance.play).toHaveBeenCalledTimes(2);
 		});
 	});
 
 	describe('stop', () => {
 		it('should stop and unload current audio', async () => {
-			const mockSound = {
-				playAsync: jest.fn().mockResolvedValue(undefined),
-				pauseAsync: jest.fn().mockResolvedValue(undefined),
-				stopAsync: jest.fn().mockResolvedValue(undefined),
-				unloadAsync: jest.fn().mockResolvedValue(undefined),
-			};
-
-			(Audio.Sound.createAsync as jest.Mock).mockResolvedValueOnce({
-				sound: mockSound,
-			});
-
 			const { result } = renderHook(() => useAudio(), {
 				wrapper: AudioProvider,
 			});
@@ -276,8 +243,7 @@ describe('AudioContext', () => {
 				await result.current.stop();
 			});
 
-			expect(mockSound.stopAsync).toHaveBeenCalled();
-			expect(mockSound.unloadAsync).toHaveBeenCalled();
+			expect(mockPlayerInstance.release).toHaveBeenCalled();
 			expect(result.current.currentAudioId).toBeNull();
 		});
 	});
@@ -293,17 +259,13 @@ describe('AudioContext', () => {
 			});
 
 			// Clear mock to verify replay calls it again
-			(Audio.Sound.createAsync as jest.Mock).mockClear();
+			expoAudio.createAudioPlayer.mockClear();
 
 			await act(async () => {
 				await result.current.replay();
 			});
 
-			expect(Audio.Sound.createAsync).toHaveBeenCalledWith(
-				{ uri: 'mock://volume-check.mp3' },
-				{ shouldPlay: true },
-				expect.any(Function)
-			);
+			expect(expoAudio.createAudioPlayer).toHaveBeenCalledWith({ uri: 'mock://volume-check.mp3' });
 		});
 
 		it('should do nothing if no audio has been played', async () => {
@@ -315,23 +277,12 @@ describe('AudioContext', () => {
 				await result.current.replay();
 			});
 
-			expect(Audio.Sound.createAsync).not.toHaveBeenCalled();
+			expect(expoAudio.createAudioPlayer).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('cleanup', () => {
 		it('should unload sound on unmount', async () => {
-			const mockSound = {
-				playAsync: jest.fn().mockResolvedValue(undefined),
-				pauseAsync: jest.fn().mockResolvedValue(undefined),
-				stopAsync: jest.fn().mockResolvedValue(undefined),
-				unloadAsync: jest.fn().mockResolvedValue(undefined),
-			};
-
-			(Audio.Sound.createAsync as jest.Mock).mockResolvedValueOnce({
-				sound: mockSound,
-			});
-
 			const { result, unmount } = renderHook(() => useAudio(), {
 				wrapper: AudioProvider,
 			});
@@ -343,7 +294,7 @@ describe('AudioContext', () => {
 			unmount();
 
 			await waitFor(() => {
-				expect(mockSound.unloadAsync).toHaveBeenCalled();
+				expect(mockPlayerInstance.release).toHaveBeenCalled();
 			});
 		});
 	});
