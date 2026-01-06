@@ -164,6 +164,8 @@
     - Reference issue if applicable: `feat: add timer component (#123)`
 4. Commit: `git commit -m "message"`
 5. Push: `git push`
+DO NOT include the text:"🤖 Generated with Claude Code
+   Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 **Examples:**
 - `feat: add breathing exercise timer`
