@@ -178,11 +178,11 @@ export default function PracticeIndexScreen() {
                         <Button
                             href="/(tabs)/relax"
                             style={styles.secondaryButton}
-                            accessibilityLabel="Ga naar Ontspan tab"
+                            textStyle={styles.secondaryButtonText}
+                            accessibilityLabel="Ga naar Ontspan"
                             accessibilityHint="Tik om naar de mindfulness oefeningen te gaan"
                         >
-                            <Icon name="brain.head.profile" size={24} color={Colors.light.primary}/>
-                            <ThemedText style={styles.secondaryButtonText}>Ga naar Ontspan</ThemedText>
+                            Ga naar Ontspan
                         </Button>
                     </View>
                 )}
@@ -312,6 +312,7 @@ const styles = StyleSheet.create({
     contentContainer: {
         alignItems: 'center',
         gap: 16,
+        justifyContent: 'space-between',
     },
     actionButtonContainer: {
         width: '100%',
@@ -319,13 +320,13 @@ const styles = StyleSheet.create({
     },
     secondaryButton: {
         backgroundColor: Colors.light.background,
-        borderWidth: 2,
+        borderWidth: 4,
         borderColor: Colors.light.primary,
-        flexDirection: 'row',
-        gap: 8,
+        alignItems: 'center',
+        width: '100%',
     },
     secondaryButtonText: {
-        fontSize: 16,
+        fontSize: Fonts.body,
         fontFamily: Fonts.semiBold,
         color: Colors.light.primary,
     },
