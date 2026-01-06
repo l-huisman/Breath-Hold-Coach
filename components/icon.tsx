@@ -30,6 +30,8 @@ const SF_SYMBOLS = [
   'waveform.path.ecg',
   'timer',
   'stopwatch.fill',
+  'figure.mind.and.body',
+  'brain.head.profile',
 
   // User & Profile
   'person.fill',
@@ -52,6 +54,7 @@ const SF_SYMBOLS = [
   'play.fill',
   'pause.fill',
   'stop.fill',
+  'speaker.wave.2.fill',
 
   // General UI
   'checkmark',
@@ -90,6 +93,8 @@ const MATERIAL_FALLBACK: Record<IconName, string> = {
   'waveform.path.ecg': 'show-chart',
   'timer': 'timer',
   'stopwatch.fill': 'timer',
+  'figure.mind.and.body': 'accessibility',
+  'brain.head.profile': 'psychology',
   'person.fill': 'person',
   'person.2.fill': 'people',
   'message.fill': 'message',
@@ -102,6 +107,7 @@ const MATERIAL_FALLBACK: Record<IconName, string> = {
   'play.fill': 'play-arrow',
   'pause.fill': 'pause',
   'stop.fill': 'stop',
+  'speaker.wave.2.fill': 'volume-up',
   'checkmark': 'check',
   'plus': 'add',
   'minus': 'remove',
