@@ -1,8 +1,10 @@
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {router} from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import {ThemedText} from '@/components/themed-text';
 import {ThemedView} from '@/components/themed-view';
+import {Button} from '@/components/button';
 import {Icon} from '@/components/icon';
 import {InstructionStep} from '@/components/instruction-step';
 import {Colors, Fonts} from '@/constants/theme';
@@ -19,14 +21,23 @@ import {INSTRUCTION_STEPS} from '@/constants/instruction-steps';
  *
  * Features:
  * - Auto-play voice guidance on each step
- * - Progress indicator (dots)
+ * - Text-based progress indicator ("X van 3")
  * - Skip button to jump to ready screen
- * - Replay audio button
+ * - Replay audio button for each step
  * - Optional link to Relax module (mindfulness step)
+ * - Visual/haptic feedback when audio plays
  */
 export default function PracticeIndexScreen() {
-    const {session, nextInstruction, skipInstructions, setReady, startSession} = usePracticeSession();
+    const {
+        session,
+        nextInstruction,
+        previousInstruction,
+        skipInstructions,
+        setReady,
+        startSession
+    } = usePracticeSession();
     const {play, replay} = useAudio();
+    const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
     // Start session on mount
     useEffect(() => {
@@ -44,11 +55,20 @@ export default function PracticeIndexScreen() {
             if (currentStep?.audioId) {
                 try {
                     if (!cancelled) {
+                        setIsPlayingAudio(true);
+                        // Haptic feedback when audio starts
+                        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         await play(currentStep.audioId);
+                        if (!cancelled) {
+                            setIsPlayingAudio(false);
+                        }
                     }
                 } catch (error) {
                     console.error('Failed to play instruction audio:', error);
                     // Non-blocking error - user can still proceed
+                    if (!cancelled) {
+                        setIsPlayingAudio(false);
+                    }
                 }
             }
         };
@@ -58,6 +78,7 @@ export default function PracticeIndexScreen() {
         // Cleanup: set cancelled flag to prevent state updates after unmount
         return () => {
             cancelled = true;
+            setIsPlayingAudio(false);
             // Note: Don't call stop() here - causes infinite loop due to state updates
             // Audio cleanup is handled by AudioContext's own cleanup
         };
@@ -81,12 +102,9 @@ export default function PracticeIndexScreen() {
     }, [isLastStep, nextInstruction, setReady]);
 
     const handlePrevious = useCallback(() => {
-        if (session.currentInstructionIndex > 0) {
-            // Go back to previous instruction
-            // Note: We need to add this method to the context
-            router.back();
-        }
-    }, [session.currentInstructionIndex]);
+        // Use context method to go to previous instruction
+        previousInstruction();
+    }, [previousInstruction]);
 
     const handleSkip = useCallback(() => {
         // Skip all remaining instructions and go to ready
@@ -94,8 +112,17 @@ export default function PracticeIndexScreen() {
         router.push('/practice/ready');
     }, [skipInstructions]);
 
-    const handleReplay = useCallback(() => {
-        replay();
+    const handleReplay = useCallback(async () => {
+        try {
+            setIsPlayingAudio(true);
+            // Haptic feedback when audio starts
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            await replay();
+            setIsPlayingAudio(false);
+        } catch (error) {
+            console.error('Failed to replay audio:', error);
+            setIsPlayingAudio(false);
+        }
     }, [replay]);
 
     // Don't render if no current step (will navigate away via useEffect above)
@@ -104,6 +131,7 @@ export default function PracticeIndexScreen() {
     }
 
     return (
+
         <ThemedView style={styles.container}>
             {/* Header Section */}
             <View style={styles.header}>
@@ -133,14 +161,63 @@ export default function PracticeIndexScreen() {
             <View style={styles.spacer}/>
 
             {/* Instruction Content - Centered */}
-            <InstructionStep
-                description={currentStep.description}
-                icon={<Icon name={currentStep.icon} size={192} color={Colors.light.text}/>}
-                showTooltip={currentStep.id === 'volume-check'}
-                tooltipText="Tik op de luidspreker voor geluid"
-                onIconPress={currentStep.id === 'volume-check' ? handleReplay : undefined}
-                accessibilityLabel={currentStep.accessibilityLabel}
-            />
+            <View style={styles.contentContainer}>
+                <InstructionStep
+                    description={currentStep.description}
+                    icon={<Icon name={currentStep.icon} size={192} color={Colors.light.text}/>}
+                    showTooltip={currentStep.id === 'volume-check'}
+                    tooltipText="Tik op de luidspreker voor geluid"
+                    onIconPress={currentStep.id === 'volume-check' ? handleReplay : undefined}
+                    accessibilityLabel={currentStep.accessibilityLabel}
+                    isPlayingAudio={isPlayingAudio}
+                />
+
+                {/* Mindfulness Relax Link (if mindfulness step) */}
+                {currentStep.id === 'mindfulness-reminder' && (
+                    <View style={styles.actionButtonContainer}>
+                        <Button
+                            href="/(tabs)/relax"
+                            style={styles.secondaryButton}
+                            accessibilityLabel="Ga naar Ontspan tab"
+                            accessibilityHint="Tik om naar de mindfulness oefeningen te gaan"
+                        >
+                            <Icon name="brain.head.profile" size={24} color={Colors.light.primary}/>
+                            <ThemedText style={styles.secondaryButtonText}>Ga naar Ontspan</ThemedText>
+                        </Button>
+                    </View>
+                )}
+
+                {/* Replay Audio Button (if audioId exists) */}
+                {currentStep.audioId && (
+                    <Pressable
+                        style={({pressed}) => [
+                            styles.replayButton,
+                            pressed && styles.replayButtonPressed,
+                            isPlayingAudio && styles.replayButtonPlaying,
+                        ]}
+                        onPress={handleReplay}
+                        disabled={isPlayingAudio}
+                        accessibilityRole="button"
+                        accessibilityLabel="Herhaal audio"
+                        accessibilityHint="Tik om de instructie audio opnieuw af te spelen"
+                        hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                    >
+                        <Icon
+                            name="speaker.wave.2.fill"
+                            size={24}
+                            color={isPlayingAudio ? Colors.light.accent : Colors.light.primary}
+                        />
+                        <ThemedText
+                            style={[
+                                styles.replayText,
+                                isPlayingAudio && styles.replayTextPlaying
+                            ]}
+                        >
+                            {isPlayingAudio ? 'Audio speelt af...' : 'Herhaal audio'}
+                        </ThemedText>
+                    </Pressable>
+                )}
+            </View>
 
             {/* Spacer - Push buttons to bottom */}
             <View style={styles.spacer}/>
@@ -188,9 +265,11 @@ export default function PracticeIndexScreen() {
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+    },
     container: {
         flex: 1,
-        justifyContent: 'space-between',
         padding: 20,
         paddingTop: 16,
     },
@@ -200,12 +279,12 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: Fonts.body,
         fontFamily: Fonts.semiBold,
         color: Colors.light.text,
     },
     headerSubtitle: {
-        fontSize: 14,
+        fontSize: Fonts.subtitle,
         fontFamily: Fonts.regular,
         color: Colors.light.textMuted,
     },
@@ -223,12 +302,55 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     skipText: {
-        fontSize: 16,
+        fontSize: Fonts.label,
         fontFamily: Fonts.regular,
         color: Colors.light.text,
     },
     spacer: {
         flex: 1,
+    },
+    contentContainer: {
+        alignItems: 'center',
+        gap: 16,
+    },
+    actionButtonContainer: {
+        width: '100%',
+        marginTop: 8,
+    },
+    secondaryButton: {
+        backgroundColor: Colors.light.background,
+        borderWidth: 2,
+        borderColor: Colors.light.primary,
+        flexDirection: 'row',
+        gap: 8,
+    },
+    secondaryButtonText: {
+        fontSize: 16,
+        fontFamily: Fonts.semiBold,
+        color: Colors.light.primary,
+    },
+    replayButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        marginTop: 8,
+        padding: 12,
+        borderRadius: 8,
+    },
+    replayButtonPressed: {
+        opacity: 0.7,
+    },
+    replayButtonPlaying: {
+        opacity: 0.6,
+    },
+    replayText: {
+        fontSize: 16,
+        fontFamily: Fonts.medium,
+        color: Colors.light.primary,
+    },
+    replayTextPlaying: {
+        color: Colors.light.accent,
     },
     navigationContainer: {
         flexDirection: 'row',

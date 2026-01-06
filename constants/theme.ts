@@ -54,4 +54,10 @@ export const Fonts = {
     medium: 'Montserrat_500Medium',
     semiBold: 'Montserrat_600SemiBold',
     bold: 'Montserrat_700Bold',
+    title1: 32,
+    title2: 24,
+    title3: 18,
+    subtitle: 16,
+    body: 16,
+    label: 12,
 };

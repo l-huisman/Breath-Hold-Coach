@@ -11,7 +11,7 @@ export interface InstructionStepProps {
 	title?: string;
 	/** Detailed description of what user should do (Dutch) */
 	description: string;
-	/** Icon or image component to display at top */
+	/** Icon or image component to display at top (ReactNode supports Icon, Image, etc.) */
 	icon: ReactNode;
 	/** Show blue tooltip banner above icon */
 	showTooltip?: boolean;
@@ -19,6 +19,8 @@ export interface InstructionStepProps {
 	tooltipText?: string;
 	/** Optional press handler for icon (e.g., replay audio) */
 	onIconPress?: () => void;
+	/** Visual feedback: if true, shows audio is playing */
+	isPlayingAudio?: boolean;
 	/** Accessibility label for the entire step content */
 	accessibilityLabel: string;
 }
@@ -45,6 +47,7 @@ export function InstructionStep({
 	showTooltip = false,
 	tooltipText,
 	onIconPress,
+	isPlayingAudio = false,
 	accessibilityLabel,
 }: InstructionStepProps) {
 	const IconContainer = onIconPress ? Pressable : View;
@@ -65,12 +68,16 @@ export function InstructionStep({
 
 			{/* Icon Container - Pressable if onIconPress provided */}
 			<IconContainer
-				style={styles.iconContainer}
+				style={[
+					styles.iconContainer,
+					isPlayingAudio && styles.iconContainerPlaying,
+				]}
 				{...(onIconPress && {
 					onPress: onIconPress,
 					accessibilityRole: 'button' as const,
 					accessibilityLabel: 'Herhaal audio',
 					accessibilityHint: 'Tik om de instructie audio opnieuw af te spelen',
+					disabled: isPlayingAudio,
 				})}
 			>
 				{icon}
@@ -123,6 +130,9 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginBottom: 20,
+	},
+	iconContainerPlaying: {
+		opacity: 0.6,
 	},
 	description: {
 		fontSize: 16,

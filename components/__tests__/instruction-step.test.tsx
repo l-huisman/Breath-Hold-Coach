@@ -95,4 +95,17 @@ describe('InstructionStep', () => {
 		);
 		expect(queryByText('Tik op de luidspreker voor geluid')).toBeNull();
 	});
+
+	it('should support isPlayingAudio prop', () => {
+		const { toJSON } = render(
+			<InstructionStep
+				description="Test Description"
+				icon={<View />}
+				isPlayingAudio={true}
+				accessibilityLabel="Test step"
+			/>
+		);
+		// Component should render without errors
+		expect(toJSON()).toBeTruthy();
+	});
 });

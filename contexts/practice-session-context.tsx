@@ -76,6 +76,7 @@ export interface PracticeSessionContextType {
 
 	// Pre-instructions
 	nextInstruction: () => void;           // Increments currentInstructionIndex
+	previousInstruction: () => void;       // Decrements currentInstructionIndex
 	skipInstructions: () => void;          // Sets instructionsSkipped=true, transitions to 'ready'
 
 	// Exercise control
@@ -144,6 +145,7 @@ type Action =
 	| { type: 'ABANDON_SESSION' }
 	| { type: 'RESET_SESSION' }
 	| { type: 'NEXT_INSTRUCTION' }
+	| { type: 'PREVIOUS_INSTRUCTION' }
 	| { type: 'SKIP_INSTRUCTIONS' }
 	| { type: 'SET_EXERCISE_PHASE'; payload: ExercisePhase }
 	| { type: 'START_BREATH_HOLD' }
@@ -238,6 +240,21 @@ function practiceSessionReducer(state: PracticeSessionState, action: Action): Pr
 			return {
 				...state,
 				currentInstructionIndex: state.currentInstructionIndex + 1,
+			};
+		}
+
+		case 'PREVIOUS_INSTRUCTION': {
+			if (state.currentState !== 'pre-instructions') {
+				console.warn('previousInstruction called but not in pre-instructions state');
+				return state;
+			}
+			// Don't go below 0
+			if (state.currentInstructionIndex <= 0) {
+				return state;
+			}
+			return {
+				...state,
+				currentInstructionIndex: state.currentInstructionIndex - 1,
 			};
 		}
 
@@ -394,6 +411,10 @@ export function PracticeSessionProvider({ children, onSessionComplete }: Practic
 		dispatch({ type: 'NEXT_INSTRUCTION' });
 	}, []);
 
+	const previousInstruction = useCallback(() => {
+		dispatch({ type: 'PREVIOUS_INSTRUCTION' });
+	}, []);
+
 	const skipInstructions = useCallback(() => {
 		dispatch({ type: 'SKIP_INSTRUCTIONS' });
 	}, []);
@@ -437,6 +458,7 @@ export function PracticeSessionProvider({ children, onSessionComplete }: Practic
 		abandonSession,
 		resetSession,
 		nextInstruction,
+		previousInstruction,
 		skipInstructions,
 		setExercisePhase,
 		startBreathHold,
