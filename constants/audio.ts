@@ -66,6 +66,27 @@ export const AUDIO_MANIFEST: Record<AudioId, AudioMetadata> = {
 		durationMs: 1000,
 		description: 'Countdown pieptoon',
 	},
+	'breathing-prep-phase-1': {
+		id: 'breathing-prep-phase-1',
+		source: require('@/assets/audio/preparation/breathing-prep-phase-1.mp3'),
+		category: 'exercise',
+		durationMs: 7000,
+		description: 'Eerste oefeningsademhaling',
+	},
+	'breathing-prep-phase-2': {
+		id: 'breathing-prep-phase-2',
+		source: require('@/assets/audio/preparation/breathing-prep-phase-2.mp3'),
+		category: 'exercise',
+		durationMs: 7000,
+		description: 'Tweede oefeningsademhaling',
+	},
+	'breathing-prep-phase-3': {
+		id: 'breathing-prep-phase-3',
+		source: require('@/assets/audio/preparation/breathing-prep-phase-3.mp3'),
+		category: 'exercise',
+		durationMs: 5000,
+		description: 'Laatste inademen en vasthouden',
+	},
 };
 
 /**
@@ -78,4 +99,10 @@ export const AUDIO_SEQUENCES = {
 	finalInhale: ['inhale-deeply'] as AudioId[],
 	// Start holding breath
 	startHold: ['hold-breath'] as AudioId[],
+	// Breathing preparation sequence (3 phases before exercise)
+	breathingPreparation: [
+		'breathing-prep-phase-1',
+		'breathing-prep-phase-2',
+		'breathing-prep-phase-3',
+	] as AudioId[],
 };

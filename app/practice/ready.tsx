@@ -1,132 +1,113 @@
-// filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/ready.tsx
+/**
+ * Ready confirmation screen before starting the exercise.
+ * Matches Figma design with wave circles background.
+ * Tap anywhere on screen to proceed to breathing preparation.
+ */
+
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/button';
-import { Icon } from '@/components/icon';
+import { BreathingCircle } from '@/components/breathing-circle';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
 
-/**
- * Ready confirmation screen before starting the exercise.
- * Final check-in with user before transitioning to active exercise.
- *
- * TODO: Secondary button has white text on white background (accessibility issue).
- * The Button component needs variant support to fix this properly.
- * Consider adding variant prop to Button component or creating SecondaryButton component.
- */
 export default function PracticeReadyScreen() {
-    const { setReady, startExercise } = usePracticeSession();
+	const { setReady } = usePracticeSession();
 
-    // Transition to ready state on mount
-    useEffect(() => {
-        setReady();
-    }, [setReady]);
+	// Transition to ready state on mount
+	useEffect(() => {
+		setReady();
+	}, [setReady]);
 
-    const handleNotReady = () => {
-        router.back();
-    };
+	const handleStart = () => {
+		// Navigate to breathing preparation
+		router.replace('/practice/preparation' as any);
+	};
 
-    const handleStartExercise = () => {
-        startExercise();
-        // Use replace to prevent back navigation from exercise
-        router.replace('/practice/exercise' as any);
-    };
+	return (
+		<Pressable
+			style={styles.container}
+			onPress={handleStart}
+			accessibilityRole="button"
+			accessibilityLabel="Klaar om te beginnen"
+			accessibilityHint="Tik ergens op het scherm om de oefening te starten"
+		>
+			{/* Wave circles background - static (not animated) */}
+			<View style={styles.circleContainer}>
+				<BreathingCircle phase="exhale" />
 
-    return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <ThemedView style={styles.container}>
-                {/* Spacer */}
-                <View style={styles.spacer} />
+				{/* Red accent circle */}
+				<View style={styles.accentCircle} />
+			</View>
 
-                {/* Icon */}
-                <View style={styles.iconContainer}>
-                    <Icon
-                        name="checkmark"
-                        size={80}
-                        color={Colors.light.primary}
-                    />
-                </View>
+			{/* Center text */}
+			<View style={styles.textContainer}>
+				<ThemedText
+					style={styles.readyText}
+					accessibilityRole="header"
+				>
+					Klaar?
+				</ThemedText>
+			</View>
 
-                {/* Main Message */}
-                <ThemedText
-                    style={styles.header}
-                    accessibilityRole="header"
-                >
-                    Ben je er klaar voor?
-                </ThemedText>
-
-                {/* Reminder Text */}
-                <ThemedText style={styles.reminderText}>
-                    Zoek een rustige plek en ga comfortabel zitten
-                </ThemedText>
-
-                {/* Spacer */}
-                <View style={styles.spacer} />
-
-                {/* Buttons */}
-                <View style={styles.buttonContainer}>
-                    <Button
-                        onPress={handleNotReady}
-                        accessibilityLabel="Nog niet klaar"
-                        accessibilityHint="Tik om terug te gaan naar de voorbereiding"
-                        style={styles.secondaryButton}
-                    >
-                        Nog niet
-                    </Button>
-                    <Button
-                        onPress={handleStartExercise}
-                        accessibilityLabel="Start oefening"
-                        accessibilityHint="Tik om de ademhalingsoefening te starten"
-                    >
-                        Start oefening
-                    </Button>
-                </View>
-            </ThemedView>
-        </SafeAreaView>
-    );
+			{/* Bottom instruction */}
+			<View style={styles.bottomContainer}>
+				<ThemedText style={styles.bottomText}>
+					Tik ergens op het scherm om te pauzeren
+				</ThemedText>
+			</View>
+		</Pressable>
+	);
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-    },
-    container: {
-        flex: 1,
-        padding: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    spacer: {
-        flex: 1,
-    },
-    iconContainer: {
-        marginBottom: 24,
-    },
-    header: {
-        fontSize: 28,
-        fontFamily: Fonts.bold,
-        color: Colors.light.text,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    reminderText: {
-        fontSize: 16,
-        fontFamily: Fonts.regular,
-        color: Colors.light.textMuted,
-        textAlign: 'center',
-        lineHeight: 24,
-    },
-    buttonContainer: {
-        width: '100%',
-        gap: 12,
-    },
-    secondaryButton: {
-        backgroundColor: Colors.light.background,
-        borderWidth: 2,
-        borderColor: Colors.light.primary,
-    },
+	container: {
+		flex: 1,
+		backgroundColor: '#97DDF4', // Light cyan from Figma
+	},
+	circleContainer: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	accentCircle: {
+		position: 'absolute',
+		width: 208,
+		height: 208,
+		borderRadius: 104,
+		borderWidth: 3,
+		borderColor: Colors.light.accent, // Red accent
+		backgroundColor: 'transparent',
+	},
+	textContainer: {
+		position: 'absolute',
+		top: '50%',
+		left: '50%',
+		transform: [{ translateX: -104 }, { translateY: -12 }], // Center the text
+		width: 208,
+	},
+	readyText: {
+		fontSize: 24,
+		fontFamily: Fonts.semiBold,
+		color: Colors.light.text,
+		textAlign: 'center',
+	},
+	bottomContainer: {
+		position: 'absolute',
+		bottom: 120, // Above navigation bar
+		left: 0,
+		right: 0,
+		paddingHorizontal: 24,
+	},
+	bottomText: {
+		fontSize: 16,
+		fontFamily: Fonts.semiBold,
+		color: Colors.light.text,
+		textAlign: 'center',
+	},
 });

@@ -14,7 +14,10 @@ export type AudioId =
 	| 'and-again'
 	| 'inhale-deeply'
 	| 'hold-breath'
-	| 'countdown-beep';
+	| 'countdown-beep'
+	| 'breathing-prep-phase-1'
+	| 'breathing-prep-phase-2'
+	| 'breathing-prep-phase-3';
 
 /**
  * Audio category type - organizes audio by usage context
