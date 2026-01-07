@@ -1,6 +1,6 @@
 /**
  * Practice Exercise Screen
- * Core breathing exercise with 5-phase state machine.
+ * Core breathing exercise with 5-phase state machine matching Figma design.
  *
  * Phase sequence:
  * 1. inhale_exhale_1 (6s): First breathing cycle
@@ -9,6 +9,7 @@
  * 4. hold (40s max): Breath hold with timer
  * 5. complete: Navigate to finish screen
  *
+ * Design: Light cyan background with pause icon and progress ring in center
  * Total duration: 56 seconds
  */
 
@@ -16,8 +17,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { useKeepAwake } from 'expo-keep-awake';
+import Svg, { Circle } from 'react-native-svg';
 import { ThemedText } from '@/components/themed-text';
 import { BreathingCircle } from '@/components/breathing-circle';
+import { Icon } from '@/components/icon';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
 import { useAudio } from '@/contexts/audio-context';
@@ -209,7 +212,10 @@ export default function PracticeExerciseScreen() {
 
 	// Play audio cues based on phase transitions
 	useEffect(() => {
-		const audioSequences: Record<ExercisePhaseType, typeof AUDIO_SEQUENCES[keyof typeof AUDIO_SEQUENCES] | null> = {
+		const audioSequences: Record<
+			ExercisePhaseType,
+			(typeof AUDIO_SEQUENCES)[keyof typeof AUDIO_SEQUENCES] | null
+		> = {
 			inhale_exhale_1: AUDIO_SEQUENCES.breathCycle,
 			inhale_exhale_2: AUDIO_SEQUENCES.breathCycle,
 			final_inhale: AUDIO_SEQUENCES.finalInhale,
@@ -243,25 +249,13 @@ export default function PracticeExerciseScreen() {
 		router.push('/practice/paused' as any);
 	};
 
-	// Get instruction text based on current phase
-	const getInstructionText = (): string => {
-		switch (currentPhase) {
-			case 'inhale_exhale_1':
-			case 'inhale_exhale_2':
-				return currentBreathingPhase === 'inhale' ? 'Adem diep in...' : 'En adem weer uit...';
-			case 'final_inhale':
-				return 'Adem diep in...';
-			case 'hold':
-				return 'Houd je adem vast!';
-			case 'complete':
-				return 'Goed gedaan!';
-			default:
-				return '';
-		}
-	};
-
 	// Format hold timer for display (M:SS)
 	const formattedHoldTime = `${Math.floor(holdTimer / 60)}:${String(holdTimer % 60).padStart(2, '0')}`;
+
+	// Calculate circle circumference for progress ring (108 = radius of circle)
+	const circleRadius = 108;
+	const circleCircumference = 2 * Math.PI * circleRadius;
+	const progressStrokeOffset = circleCircumference * (1 - progress / 100);
 
 	return (
 		<Pressable
@@ -271,44 +265,78 @@ export default function PracticeExerciseScreen() {
 			accessibilityLabel="Oefening scherm"
 			accessibilityHint="Tik ergens om te pauzeren"
 		>
-			{/* Progress Bar */}
-			<View
-				style={styles.progressBarContainer}
-				accessibilityElementsHidden={true}
-			>
-				<View style={[styles.progressBar, { width: `${progress}%` }]} />
-			</View>
-
-			{/* Spacer */}
-			<View style={styles.spacer} />
-
 			{/* Breathing Circle Animation */}
 			<View style={styles.circleContainer}>
 				<BreathingCircle phase={currentBreathingPhase} />
+
+				{/* Center Content: Pause icon or Timer */}
+				<View style={styles.centerContent}>
+					{currentPhase === 'hold' ? (
+						// Show timer during hold phase
+						<ThemedText
+							style={styles.holdTimerText}
+							accessibilityLabel={`Ademhouding: ${formattedHoldTime}`}
+							accessibilityLiveRegion="polite"
+						>
+							{formattedHoldTime}
+						</ThemedText>
+					) : (
+						// Show pause icon during breathing phases
+						<>
+							{/* Circular progress ring */}
+							<Svg
+								width={220}
+								height={220}
+								style={styles.progressRing}
+								accessibilityElementsHidden={true}
+							>
+								{/* Background circle */}
+								<Circle
+									cx={110}
+									cy={110}
+									r={circleRadius}
+									stroke="rgba(255, 255, 255, 0.3)"
+									strokeWidth={4}
+									fill="none"
+								/>
+								{/* Progress circle */}
+								<Circle
+									cx={110}
+									cy={110}
+									r={circleRadius}
+									stroke={Colors.light.accent}
+									strokeWidth={4}
+									fill="none"
+									strokeDasharray={circleCircumference}
+									strokeDashoffset={progressStrokeOffset}
+									strokeLinecap="round"
+									transform={`rotate(-90 110 110)`}
+								/>
+							</Svg>
+
+							{/* Pause icon */}
+							<View
+								style={styles.pauseIconContainer}
+								accessibilityElementsHidden={true}
+							>
+								<Icon
+									name="pause.fill"
+									size={48}
+									color={Colors.light.text}
+								/>
+							</View>
+						</>
+					)}
+				</View>
 			</View>
 
-			{/* Hold Timer (only during hold phase) */}
-			{currentPhase === 'hold' && (
-				<ThemedText
-					style={styles.timerText}
-					accessibilityLabel={`Ademhouding: ${formattedHoldTime}`}
-					accessibilityLiveRegion="polite"
-				>
-					{formattedHoldTime}
-				</ThemedText>
-			)}
-
-			{/* Instruction Text */}
+			{/* Bottom instruction text */}
 			<ThemedText
-				style={styles.instructionText}
-				accessibilityLabel={getInstructionText()}
-				accessibilityLiveRegion="polite"
+				style={styles.bottomInstructionText}
+				accessibilityLabel="Tik ergens op het scherm om te pauzeren"
 			>
-				{getInstructionText()}
+				Tik ergens op het scherm om te pauzeren
 			</ThemedText>
-
-			{/* Spacer */}
-			<View style={styles.spacer} />
 		</Pressable>
 	);
 }
@@ -316,45 +344,45 @@ export default function PracticeExerciseScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: Colors.light.primary, // Full blue background
-		padding: 20,
-	},
-	progressBarContainer: {
-		position: 'absolute',
-		top: 60, // Below safe area
-		left: 20,
-		right: 20,
-		height: 4,
-		backgroundColor: 'rgba(242, 238, 235, 0.3)', // Semi-transparent white
-		borderRadius: 2,
-		overflow: 'hidden',
-	},
-	progressBar: {
-		height: '100%',
-		backgroundColor: Colors.light.textContrast, // White
-		borderRadius: 2,
-	},
-	spacer: {
-		flex: 1,
+		backgroundColor: Colors.light.secondary, // Light cyan background
+		justifyContent: 'center',
+		alignItems: 'center',
+		paddingHorizontal: 20,
 	},
 	circleContainer: {
 		justifyContent: 'center',
 		alignItems: 'center',
-		minHeight: 300,
+		flex: 1,
 	},
-	timerText: {
+	centerContent: {
+		position: 'absolute',
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	progressRing: {
+		position: 'absolute',
+	},
+	pauseIconContainer: {
+		justifyContent: 'center',
+		alignItems: 'center',
+		width: 80,
+		height: 80,
+		borderRadius: 40,
+		backgroundColor: 'rgba(255, 255, 255, 0.5)',
+	},
+	holdTimerText: {
 		fontSize: 72,
 		fontFamily: Fonts.bold,
-		color: Colors.light.textContrast,
+		color: Colors.light.text,
 		textAlign: 'center',
-		marginTop: 24,
 	},
-	instructionText: {
-		fontSize: 24,
-		fontFamily: Fonts.medium,
-		color: Colors.light.textContrast,
+	bottomInstructionText: {
+		position: 'absolute',
+		bottom: 120, // Above navigation area
+		fontSize: 16,
+		fontFamily: Fonts.semiBold,
+		color: Colors.light.text,
 		textAlign: 'center',
-		marginTop: 24,
-		paddingHorizontal: 20,
+		paddingHorizontal: 24,
 	},
 });

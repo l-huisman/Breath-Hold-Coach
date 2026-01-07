@@ -11,6 +11,7 @@ export const Colors = {
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        secondary: '#97DDF4',
         tertiary: '#284EA6',
         accent: '#FF4B3E',
         // UI element backgrounds
@@ -31,6 +32,7 @@ export const Colors = {
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        secondary: '#97DDF4',
         tertiary: '#284EA6',
         accent: '#FF4B3E',
         // UI element backgrounds
