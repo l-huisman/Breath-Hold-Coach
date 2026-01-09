@@ -14,7 +14,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { BreathingCircle } from '@/components/breathing-circle';
 import { Button } from '@/components/button';
 import { Colors, Fonts } from '@/constants/theme';
@@ -149,27 +148,20 @@ export default function PracticePreparationScreen() {
 	};
 
 	return (
-		<ThemedView style={styles.container}>
-			{/* Progress Indicator */}
-			<View style={styles.progressContainer}>
-				<ThemedText
-					style={styles.progressText}
-					accessibilityLabel={`Voorbereiding ${currentPhase + 1} van 3`}
-				>
-					{currentPhase + 1} van 3
-				</ThemedText>
-			</View>
-
-			{/* Spacer */}
+		<View style={styles.container}>
+			{/* Top spacer - pushes content to vertical center */}
 			<View style={styles.spacer} />
 
-			{/* Breathing Circle */}
-			<View style={styles.circleContainer}>
+			{/* Center content area - circles and text layered together */}
+			<View style={styles.centerContent}>
+				{/* Breathing circle - animates based on phase */}
 				<BreathingCircle phase={currentBreathingPhase} />
-			</View>
 
-			{/* Breathing Instruction */}
-			<View style={styles.instructionContainer}>
+			{/* Accent circle - overlaid on wave circles */}
+			<View style={styles.accentCircle} />
+
+
+				{/* Instruction text - centered inside the circles */}
 				<ThemedText
 					style={styles.instructionText}
 					accessibilityLabel={getInstructionText()}
@@ -179,8 +171,15 @@ export default function PracticePreparationScreen() {
 				</ThemedText>
 			</View>
 
-			{/* Spacer */}
+			{/* Bottom spacer - balances top spacer */}
 			<View style={styles.spacer} />
+
+			{/* Bottom instruction text */}
+			<View style={styles.bottomContainer}>
+				<ThemedText style={styles.bottomText}>
+					Tik ergens op het scherm om te pauzeren
+				</ThemedText>
+			</View>
 
 			{/* Error Message + Manual Control (only if audio failed) */}
 			{error && (
@@ -194,67 +193,56 @@ export default function PracticePreparationScreen() {
 					</Button>
 				</View>
 			)}
-
-			{/* Bottom instruction (matching Figma design) */}
-			<ThemedText style={styles.bottomInstruction}>
-				Tik ergens op het scherm om te pauzeren
-			</ThemedText>
-		</ThemedView>
+		</View>
 	);
 }
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 20,
-		backgroundColor: Colors.light.background,
-		justifyContent: 'center',
+		backgroundColor: Colors.light.secondary,
 		alignItems: 'center',
-	},
-	progressContainer: {
-		position: 'absolute',
-		top: 60,
-		alignSelf: 'center',
-	},
-	progressText: {
-		fontSize: 18,
-		fontFamily: Fonts.medium,
-		color: Colors.light.textMuted,
-		textAlign: 'center',
 	},
 	spacer: {
 		flex: 1,
 	},
-	circleContainer: {
-		justifyContent: 'center',
+	centerContent: {
+		position: 'relative',
 		alignItems: 'center',
-		minHeight: 300,
+		justifyContent: 'center',
 	},
-	instructionContainer: {
-		marginTop: 40,
-		paddingHorizontal: 20,
+	accentCircle: {
+		position: 'absolute',
+		width: 200,
+		height: 200,
+		borderRadius: 100,
+		borderWidth: 4,
+		borderColor: Colors.light.accent,
+		backgroundColor: Colors.light.secondary,
 	},
 	instructionText: {
-		fontSize: 39,
-		fontFamily: Fonts.bold,
-		color: Colors.light.primary,
+		position: 'absolute',
+		fontSize: Fonts.title2,
+		fontFamily: Fonts.semiBold,
+		color: Colors.light.text,
 		textAlign: 'center',
 	},
-	bottomInstruction: {
-		position: 'absolute',
-		bottom: 120,
-		fontSize: 14,
-		fontFamily: Fonts.regular,
-		color: Colors.light.textMuted,
+	bottomContainer: {
+		paddingBottom: 32,
+	},
+	bottomText: {
+		fontSize: Fonts.body,
+		fontFamily: Fonts.semiBold,
+		color: Colors.light.text,
 		textAlign: 'center',
-		paddingHorizontal: 20,
 	},
 	errorContainer: {
 		position: 'absolute',
-		bottom: 40,
+		bottom: 80,
 		width: '100%',
 		paddingHorizontal: 20,
 		gap: 12,
+		alignItems: 'center',
 	},
 	errorText: {
 		fontSize: 14,

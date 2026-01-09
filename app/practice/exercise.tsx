@@ -1,388 +1,336 @@
 /**
  * Practice Exercise Screen
- * Core breathing exercise with 5-phase state machine matching Figma design.
+ * Core breathing exercise - the actual medical DIBH (Deep Inspiration Breath Hold) phase.
  *
- * Phase sequence:
- * 1. inhale_exhale_1 (6s): First breathing cycle
- * 2. inhale_exhale_2 (6s): Second breathing cycle
- * 3. final_inhale (4s): Final deep inhale
- * 4. hold (40s max): Breath hold with timer
- * 5. complete: Navigate to finish screen
+ * Flow:
+ * - User has already completed breathing preparation in preparation.tsx
+ * - This screen handles the hold phase (40s max) with timer and progress tracking
+ * - On completion, navigates to finish screen
  *
  * Design: Light cyan background with pause icon and progress ring in center
- * Total duration: 56 seconds
+ * Duration: Up to 40 seconds (customizable per user's goal)
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, Pressable } from 'react-native';
-import { router } from 'expo-router';
-import { useKeepAwake } from 'expo-keep-awake';
-import Svg, { Circle } from 'react-native-svg';
-import { ThemedText } from '@/components/themed-text';
-import { BreathingCircle } from '@/components/breathing-circle';
-import { Icon } from '@/components/icon';
-import { Colors, Fonts } from '@/constants/theme';
-import { usePracticeSession } from '@/contexts/practice-session-context';
-import { useAudio } from '@/contexts/audio-context';
-import { AUDIO_SEQUENCES } from '@/constants/audio';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Pressable, StyleSheet, View} from 'react-native';
+import {router} from 'expo-router';
+import {useKeepAwake} from 'expo-keep-awake';
+import Svg, {Circle} from 'react-native-svg';
+import {ThemedText} from '@/components/themed-text';
+import {BreathingCircle} from '@/components/breathing-circle';
+import {Icon} from '@/components/icon';
+import {Colors, Fonts} from '@/constants/theme';
+import {usePracticeSession} from '@/contexts/practice-session-context';
+import {useAudio} from '@/contexts/audio-context';
+import {AUDIO_SEQUENCES} from '@/constants/audio';
 
 // Exercise phase types
 type ExercisePhaseType =
-	| 'inhale_exhale_1' // First breathing cycle (6s)
-	| 'inhale_exhale_2' // Second breathing cycle (6s)
-	| 'final_inhale' // Final deep inhale (4s)
-	| 'hold' // Breath hold (up to 40s)
-	| 'complete'; // Exercise finished
+    | 'inhale_exhale_1' // First breathing cycle (6s)
+    | 'inhale_exhale_2' // Second breathing cycle (6s)
+    | 'final_inhale' // Final deep inhale (4s)
+    | 'hold' // Breath hold (up to 40s)
+    | 'complete'; // Exercise finished
 
 type BreathingPhase = 'inhale' | 'exhale' | 'hold';
 
 // Medical protocol timing constants (milliseconds)
 const EXERCISE_TIMING = {
-	INHALE_EXHALE_1_DURATION: 6000, // 6 seconds
-	INHALE_EXHALE_2_DURATION: 6000, // 6 seconds
-	FINAL_INHALE_DURATION: 4000, // 4 seconds
-	MAX_HOLD_DURATION: 40000, // 40 seconds
-	TOTAL_DURATION: 56000, // 56 seconds total
-	INHALE_DURATION: 3000, // 3 seconds per inhale
-	EXHALE_DURATION: 3000, // 3 seconds per exhale
+    MAX_HOLD_DURATION: 40000, // 40 seconds
 } as const;
 
 export default function PracticeExerciseScreen() {
-	// Keep screen awake during exercise
-	useKeepAwake();
+    // Keep screen awake during exercise
+    useKeepAwake();
 
-	const {
-		getCurrentBreathHoldDuration,
-		startBreathHold,
-		endBreathHold,
-		pauseExercise,
-		finishExercise,
-		setExercisePhase,
-	} = usePracticeSession();
-	const { playSequence, stop } = useAudio();
+    const {
+        getCurrentBreathHoldDuration,
+        startBreathHold,
+        endBreathHold,
+        pauseExercise,
+        finishExercise,
+        setExercisePhase,
+    } = usePracticeSession();
+    const {playSequence, stop} = useAudio();
 
-	// Local state for exercise phases
-	const [currentPhase, setCurrentPhase] = useState<ExercisePhaseType>('inhale_exhale_1');
-	const [currentBreathingPhase, setCurrentBreathingPhase] = useState<BreathingPhase>('inhale');
-	const [phaseStartTime, setPhaseStartTime] = useState<Date>(new Date());
-	const [progress, setProgress] = useState(0);
-	const [holdTimer, setHoldTimer] = useState(0);
+    // Local state for exercise phases
+    const [currentPhase, setCurrentPhase] = useState<ExercisePhaseType>('hold');
+    const [currentBreathingPhase, setCurrentBreathingPhase] = useState<BreathingPhase>('hold');
+    const [phaseStartTime, setPhaseStartTime] = useState<Date>(new Date());
+    const [progress, setProgress] = useState(0);
+    const [holdTimer, setHoldTimer] = useState(0);
 
-	// Calculate progress percentage based on elapsed time
-	const calculateProgress = useCallback((): number => {
-		if (!phaseStartTime) return 0;
+    // Calculate progress percentage based on elapsed time
+    const calculateProgress = useCallback((): number => {
+        if (!phaseStartTime || currentPhase !== 'hold') return 0;
 
-		const elapsedInCurrentPhase = Date.now() - phaseStartTime.getTime();
+        const elapsedInHold = Date.now() - phaseStartTime.getTime();
+        return Math.min(100, (elapsedInHold / EXERCISE_TIMING.MAX_HOLD_DURATION) * 100);
+    }, [currentPhase, phaseStartTime]);
 
-		// Calculate base progress from completed phases
-		let baseProgress = 0;
-		switch (currentPhase) {
-			case 'inhale_exhale_1':
-				baseProgress = 0;
-				break;
-			case 'inhale_exhale_2':
-				baseProgress = EXERCISE_TIMING.INHALE_EXHALE_1_DURATION;
-				break;
-			case 'final_inhale':
-				baseProgress =
-					EXERCISE_TIMING.INHALE_EXHALE_1_DURATION + EXERCISE_TIMING.INHALE_EXHALE_2_DURATION;
-				break;
-			case 'hold':
-				baseProgress =
-					EXERCISE_TIMING.INHALE_EXHALE_1_DURATION +
-					EXERCISE_TIMING.INHALE_EXHALE_2_DURATION +
-					EXERCISE_TIMING.FINAL_INHALE_DURATION;
-				break;
-			case 'complete':
-				return 100;
-		}
+    // Update progress bar every 100ms
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setProgress(calculateProgress());
+        }, 100);
 
-		const totalElapsed = baseProgress + elapsedInCurrentPhase;
-		return Math.min(100, (totalElapsed / EXERCISE_TIMING.TOTAL_DURATION) * 100);
-	}, [currentPhase, phaseStartTime]);
+        return () => clearInterval(interval);
+    }, [calculateProgress]);
 
-	// Update progress bar every 100ms
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setProgress(calculateProgress());
-		}, 100);
+    // Update hold timer display every 100ms during hold phase
+    useEffect(() => {
+        if (currentPhase !== 'hold') {
+            setHoldTimer(0);
+            return;
+        }
 
-		return () => clearInterval(interval);
-	}, [calculateProgress]);
+        const interval = setInterval(() => {
+            const duration = getCurrentBreathHoldDuration();
+            setHoldTimer(duration);
+        }, 100);
 
-	// Update hold timer display every 100ms during hold phase
-	useEffect(() => {
-		if (currentPhase !== 'hold') {
-			setHoldTimer(0);
-			return;
-		}
+        return () => clearInterval(interval);
+    }, [currentPhase, getCurrentBreathHoldDuration]);
 
-		const interval = setInterval(() => {
-			const duration = getCurrentBreathHoldDuration();
-			setHoldTimer(duration);
-		}, 100);
+    // Main exercise state machine - runs on mount
+    // Note: Breathing preparation (inhale/exhale cycles) is handled in preparation.tsx
+    // This phase starts directly with the hold phase (the actual medical exercise)
+    useEffect(() => {
+        const timers: number[] = [];
 
-		return () => clearInterval(interval);
-	}, [currentPhase, getCurrentBreathHoldDuration]);
+        const runExercise = () => {
+            // === PHASE: hold (40s max) ===
+            // This is the main medical exercise - breath hold with heart protection
+            setCurrentPhase('hold');
+            setCurrentBreathingPhase('hold');
+            setPhaseStartTime(new Date());
+            setExercisePhase('hold');
 
-	// Main exercise state machine - runs on mount
-	useEffect(() => {
-		const timers: number[] = [];
+            // Start breath hold tracking in context
+            startBreathHold();
 
-		const runExercise = () => {
-			// === PHASE 1: inhale_exhale_1 (6s) ===
-			setCurrentPhase('inhale_exhale_1');
-			setCurrentBreathingPhase('inhale');
-			setPhaseStartTime(new Date());
-			setExercisePhase('inhale');
+            // === PHASE: complete (auto after 40s) ===
+            timers.push(
+                window.setTimeout(() => {
+                    // End breath hold (calculates duration)
+                    endBreathHold();
 
-			// Switch to exhale after 3s
-			timers.push(
-				window.setTimeout(() => {
-					setCurrentBreathingPhase('exhale');
-					setExercisePhase('exhale');
-				}, EXERCISE_TIMING.INHALE_DURATION)
-			);
+                    // Transition to complete
+                    setCurrentPhase('complete');
 
-			// === PHASE 2: inhale_exhale_2 (6s) ===
-			timers.push(
-				window.setTimeout(() => {
-					setCurrentPhase('inhale_exhale_2');
-					setCurrentBreathingPhase('inhale');
-					setPhaseStartTime(new Date());
-					setExercisePhase('inhale');
+                    // Finish exercise and navigate
+                    finishExercise();
+                    router.replace('/practice/finish' as any);
+                }, EXERCISE_TIMING.MAX_HOLD_DURATION)
+            );
+        };
 
-					// Switch to exhale after 3s
-					timers.push(
-						window.setTimeout(() => {
-							setCurrentBreathingPhase('exhale');
-							setExercisePhase('exhale');
-						}, EXERCISE_TIMING.INHALE_DURATION)
-					);
+        runExercise();
 
-					// === PHASE 3: final_inhale (4s) ===
-					timers.push(
-						window.setTimeout(() => {
-							setCurrentPhase('final_inhale');
-							setCurrentBreathingPhase('inhale');
-							setPhaseStartTime(new Date());
-							setExercisePhase('inhale');
+        // Cleanup: Clear all timers on unmount
+        return () => {
+            timers.forEach((timer) => clearTimeout(timer));
+            stop(); // Stop audio
+        };
+    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
 
-							// === PHASE 4: hold (40s max) ===
-							timers.push(
-								window.setTimeout(() => {
-									setCurrentPhase('hold');
-									setCurrentBreathingPhase('hold');
-									setPhaseStartTime(new Date());
-									setExercisePhase('hold');
+    // Play audio cues based on phase transitions
+    useEffect(() => {
+        // Only play audio for the hold phase (the actual exercise)
+        // Breathing prep audio is handled in preparation.tsx
+        const audioSequences: Record<
+            ExercisePhaseType,
+            (typeof AUDIO_SEQUENCES)[keyof typeof AUDIO_SEQUENCES] | null
+        > = {
+            inhale_exhale_1: null, // Not used - breathing prep done in preparation.tsx
+            inhale_exhale_2: null, // Not used - breathing prep done in preparation.tsx
+            final_inhale: null, // Not used - breathing prep done in preparation.tsx
+            hold: AUDIO_SEQUENCES.startHold,
+            complete: null,
+        };
 
-									// Start breath hold tracking in context
-									startBreathHold();
+        const sequence = audioSequences[currentPhase];
+        if (sequence) {
+            playSequence(sequence).catch((err) => {
+                console.error('Audio playback failed:', err);
+                // Continue exercise with visual cues only (graceful degradation)
+            });
+        }
+    }, [currentPhase, playSequence]);
 
-									// === PHASE 5: complete (auto after 40s) ===
-									timers.push(
-										window.setTimeout(() => {
-											// End breath hold (calculates duration)
-											endBreathHold();
+    // Handle tap to pause
+    const handleTapToPause = () => {
+        // Stop audio
+        stop();
 
-											// Transition to complete
-											setCurrentPhase('complete');
+        // If in hold phase, record the duration before pausing
+        if (currentPhase === 'hold') {
+            endBreathHold();
+        }
 
-											// Finish exercise and navigate
-											finishExercise();
-											router.replace('/practice/finish' as any);
-										}, EXERCISE_TIMING.MAX_HOLD_DURATION)
-									);
-								}, EXERCISE_TIMING.FINAL_INHALE_DURATION)
-							);
-						}, EXERCISE_TIMING.INHALE_EXHALE_2_DURATION)
-					);
-				}, EXERCISE_TIMING.INHALE_EXHALE_1_DURATION)
-			);
-		};
+        // Transition to paused state
+        pauseExercise();
 
-		runExercise();
+        // Navigate to paused screen
+        router.push('/practice/paused' as any);
+    };
 
-		// Cleanup: Clear all timers on unmount
-		return () => {
-			timers.forEach((timer) => clearTimeout(timer));
-			stop(); // Stop audio
-		};
-	}, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
+    // Format hold timer for display (M:SS)
+    const formattedHoldTime = `${Math.floor(holdTimer / 60)}:${String(holdTimer % 60).padStart(2, '0')}`;
 
-	// Play audio cues based on phase transitions
-	useEffect(() => {
-		const audioSequences: Record<
-			ExercisePhaseType,
-			(typeof AUDIO_SEQUENCES)[keyof typeof AUDIO_SEQUENCES] | null
-		> = {
-			inhale_exhale_1: AUDIO_SEQUENCES.breathCycle,
-			inhale_exhale_2: AUDIO_SEQUENCES.breathCycle,
-			final_inhale: AUDIO_SEQUENCES.finalInhale,
-			hold: AUDIO_SEQUENCES.startHold,
-			complete: null,
-		};
+    // Calculate circle circumference for progress ring (108 = radius of circle)
+    const circleRadius = 108;
+    const circleCircumference = 2 * Math.PI * circleRadius;
+    const progressStrokeOffset = circleCircumference * (1 - progress / 100);
 
-		const sequence = audioSequences[currentPhase];
-		if (sequence) {
-			playSequence(sequence).catch((err) => {
-				console.error('Audio playback failed:', err);
-				// Continue exercise with visual cues only (graceful degradation)
-			});
-		}
-	}, [currentPhase, playSequence]);
+    return (
+        <Pressable
+            style={styles.container}
+            onPress={handleTapToPause}
+            accessibilityRole="button"
+            accessibilityLabel="Oefening scherm"
+            accessibilityHint="Tik ergens om te pauzeren"
+        >
+            {/* Top spacer - pushes content to vertical center */}
+            <View style={styles.spacer}/>
 
-	// Handle tap to pause
-	const handleTapToPause = () => {
-		// Stop audio
-		stop();
+            {/* Center content area - circles and text layered together */}
+            <View style={styles.centerContent}>
+                {/* Breathing Circle Animation */}
+                <BreathingCircle phase={currentBreathingPhase}/>
 
-		// If in hold phase, record the duration before pausing
-		if (currentPhase === 'hold') {
-			endBreathHold();
-		}
+                {/* Red accent circle - overlaid on wave circles */}
+                <View style={styles.accentCircle}/>
 
-		// Transition to paused state
-		pauseExercise();
+                {/* Center Content: Pause icon or Timer */}
+                <View style={styles.innerContent}>
+                    {currentPhase === 'hold' ? (
+                        // Show timer during hold phase
+                        <ThemedText
+                            style={styles.holdTimerText}
+                            accessibilityLabel={`Ademhouding: ${formattedHoldTime}`}
+                            accessibilityLiveRegion="polite"
+                        >
+                            {formattedHoldTime}
+                        </ThemedText>
+                    ) : (
+                        // Show pause icon during breathing phases
+                        <>
+                            {/* Circular progress ring */}
+                            <Svg
+                                width={220}
+                                height={220}
+                                style={styles.progressRing}
+                                accessibilityElementsHidden={true}
+                            >
+                                {/* Background circle */}
+                                <Circle
+                                    cx={110}
+                                    cy={110}
+                                    r={circleRadius}
+                                    stroke="rgba(255, 255, 255, 0.3)"
+                                    strokeWidth={4}
+                                    fill="none"
+                                />
+                                {/* Progress circle */}
+                                <Circle
+                                    cx={110}
+                                    cy={110}
+                                    r={circleRadius}
+                                    stroke={Colors.light.accent}
+                                    strokeWidth={4}
+                                    fill="none"
+                                    strokeDasharray={circleCircumference}
+                                    strokeDashoffset={progressStrokeOffset}
+                                    strokeLinecap="round"
+                                    transform={`rotate(-90 110 110)`}
+                                />
+                            </Svg>
 
-		// Navigate to paused screen
-		router.push('/practice/paused' as any);
-	};
+                            {/* Pause icon */}
+                            <View
+                                style={styles.pauseIconContainer}
+                                accessibilityElementsHidden={true}
+                            >
+                                <Icon
+                                    name="pause.fill"
+                                    size={48}
+                                    color={Colors.light.text}
+                                />
+                            </View>
+                        </>
+                    )}
+                </View>
+            </View>
 
-	// Format hold timer for display (M:SS)
-	const formattedHoldTime = `${Math.floor(holdTimer / 60)}:${String(holdTimer % 60).padStart(2, '0')}`;
+            {/* Bottom spacer - balances top spacer */}
+            <View style={styles.spacer}/>
 
-	// Calculate circle circumference for progress ring (108 = radius of circle)
-	const circleRadius = 108;
-	const circleCircumference = 2 * Math.PI * circleRadius;
-	const progressStrokeOffset = circleCircumference * (1 - progress / 100);
-
-	return (
-		<Pressable
-			style={styles.container}
-			onPress={handleTapToPause}
-			accessibilityRole="button"
-			accessibilityLabel="Oefening scherm"
-			accessibilityHint="Tik ergens om te pauzeren"
-		>
-			{/* Breathing Circle Animation */}
-			<View style={styles.circleContainer}>
-				<BreathingCircle phase={currentBreathingPhase} />
-
-				{/* Center Content: Pause icon or Timer */}
-				<View style={styles.centerContent}>
-					{currentPhase === 'hold' ? (
-						// Show timer during hold phase
-						<ThemedText
-							style={styles.holdTimerText}
-							accessibilityLabel={`Ademhouding: ${formattedHoldTime}`}
-							accessibilityLiveRegion="polite"
-						>
-							{formattedHoldTime}
-						</ThemedText>
-					) : (
-						// Show pause icon during breathing phases
-						<>
-							{/* Circular progress ring */}
-							<Svg
-								width={220}
-								height={220}
-								style={styles.progressRing}
-								accessibilityElementsHidden={true}
-							>
-								{/* Background circle */}
-								<Circle
-									cx={110}
-									cy={110}
-									r={circleRadius}
-									stroke="rgba(255, 255, 255, 0.3)"
-									strokeWidth={4}
-									fill="none"
-								/>
-								{/* Progress circle */}
-								<Circle
-									cx={110}
-									cy={110}
-									r={circleRadius}
-									stroke={Colors.light.accent}
-									strokeWidth={4}
-									fill="none"
-									strokeDasharray={circleCircumference}
-									strokeDashoffset={progressStrokeOffset}
-									strokeLinecap="round"
-									transform={`rotate(-90 110 110)`}
-								/>
-							</Svg>
-
-							{/* Pause icon */}
-							<View
-								style={styles.pauseIconContainer}
-								accessibilityElementsHidden={true}
-							>
-								<Icon
-									name="pause.fill"
-									size={48}
-									color={Colors.light.text}
-								/>
-							</View>
-						</>
-					)}
-				</View>
-			</View>
-
-			{/* Bottom instruction text */}
-			<ThemedText
-				style={styles.bottomInstructionText}
-				accessibilityLabel="Tik ergens op het scherm om te pauzeren"
-			>
-				Tik ergens op het scherm om te pauzeren
-			</ThemedText>
-		</Pressable>
-	);
+            {/* Bottom instruction text */}
+            <View style={styles.bottomContainer}>
+                <ThemedText
+                    style={styles.bottomInstructionText}
+                    accessibilityLabel="Tik ergens op het scherm om te pauzeren"
+                >
+                    Tik ergens op het scherm om te pauzeren
+                </ThemedText>
+            </View>
+        </Pressable>
+    );
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: Colors.light.secondary, // Light cyan background
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingHorizontal: 20,
-	},
-	circleContainer: {
-		justifyContent: 'center',
-		alignItems: 'center',
-		flex: 1,
-	},
-	centerContent: {
-		position: 'absolute',
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	progressRing: {
-		position: 'absolute',
-	},
-	pauseIconContainer: {
-		justifyContent: 'center',
-		alignItems: 'center',
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		backgroundColor: 'rgba(255, 255, 255, 0.5)',
-	},
-	holdTimerText: {
-		fontSize: 72,
-		fontFamily: Fonts.bold,
-		color: Colors.light.text,
-		textAlign: 'center',
-	},
-	bottomInstructionText: {
-		position: 'absolute',
-		bottom: 120, // Above navigation area
-		fontSize: 16,
-		fontFamily: Fonts.semiBold,
-		color: Colors.light.text,
-		textAlign: 'center',
-		paddingHorizontal: 24,
-	},
+    container: {
+        flex: 1,
+        backgroundColor: Colors.light.secondary,
+        alignItems: 'center',
+    },
+    spacer: {
+        flex: 1,
+    },
+    centerContent: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    accentCircle: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 200 * 200 / 2,
+        borderWidth: 4,
+        borderColor: Colors.light.accent,
+        backgroundColor: Colors.light.secondary,
+    },
+    innerContent: {
+        position: 'absolute',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    progressRing: {
+        position: 'absolute',
+    },
+    pauseIconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    holdTimerText: {
+        fontSize: Fonts.title2,
+        fontFamily: Fonts.bold,
+        color: Colors.light.text,
+        textAlign: 'center',
+    },
+    bottomContainer: {
+        paddingBottom: 32,
+    },
+    bottomInstructionText: {
+        fontSize: Fonts.body,
+        fontFamily: Fonts.semiBold,
+        color: Colors.light.text,
+        textAlign: 'center',
+    },
 });
