@@ -11,6 +11,7 @@ import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
 import {useAudio} from '@/contexts/audio-context';
 import {INSTRUCTION_STEPS} from '@/constants/instruction-steps';
+import {playDebugPing} from '@/constants/audio';
 
 /**
  * Pre-instructions wizard screen for practice module.
@@ -56,6 +57,8 @@ export default function PracticeIndexScreen() {
                 try {
                     if (!cancelled) {
                         setIsPlayingAudio(true);
+                        // DEBUG: Mark when instructional audio auto-plays
+                        playDebugPing();
                         // Haptic feedback when audio starts
                         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                         await play(currentStep.audioId);

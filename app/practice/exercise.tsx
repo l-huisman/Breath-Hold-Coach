@@ -22,7 +22,7 @@ import {Icon} from '@/components/icon';
 import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
 import {useAudio} from '@/contexts/audio-context';
-import {AUDIO_SEQUENCES} from '@/constants/audio';
+import {AUDIO_SEQUENCES, playDebugPing} from '@/constants/audio';
 
 // Exercise phase types
 type ExercisePhaseType =
@@ -108,10 +108,12 @@ export default function PracticeExerciseScreen() {
 
             // Start breath hold tracking in context
             startBreathHold();
+            playDebugPing(); // DEBUG: Exercise start (hold begins)
 
             // === PHASE: complete (auto after 40s) ===
             timers.push(
                 window.setTimeout(() => {
+                    playDebugPing(); // DEBUG: Exercise→Finish transition (40s auto)
                     // End breath hold (calculates duration)
                     endBreathHold();
 
@@ -160,6 +162,7 @@ export default function PracticeExerciseScreen() {
 
     // Handle tap to pause
     const handleTapToPause = () => {
+        playDebugPing(); // DEBUG: Exercise→Pause transition (manual)
         // Stop audio
         stop();
 

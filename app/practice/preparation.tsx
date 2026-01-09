@@ -19,7 +19,7 @@ import { Button } from '@/components/button';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
 import { useAudio } from '@/contexts/audio-context';
-import { AUDIO_SEQUENCES } from '@/constants/audio';
+import { AUDIO_SEQUENCES, playDebugPing } from '@/constants/audio';
 
 type BreathingPhase = 'inhale' | 'exhale' | 'hold';
 type PreparationPhase = 0 | 1 | 2; // 3 phases total
@@ -72,46 +72,61 @@ export default function PracticePreparationScreen() {
 		// Phase 1: Inhale (3.5s) → Exhale (3.5s) = 7s total
 		// Phase 2: Inhale (3.5s) → Hold (1s) → Navigate = 4.5s total
 		// Total: ~18.5 seconds
+		//
+		// Debug pings fire at phase END boundaries (before state changes)
 
 		const timers: number[] = [];
 
 		const runBreathingSequence = () => {
-			// Start with phase 0, inhale
+			// 0ms: Start Phase 0, inhale
 			setCurrentPhase(0);
 			setCurrentBreathingPhase('inhale');
 
-			// Phase 0: Inhale → Exhale
+			// 3500ms: End of first inhale → Start exhale + DEBUG PING
 			timers.push(setTimeout(() => {
+				playDebugPing(); // DEBUG: End of Phase 0 inhale
 				setCurrentBreathingPhase('exhale');
 			}, BREATHING_TIMING.INHALE_DURATION));
 
-			// Move to Phase 1 after one complete phase
+			// 6900ms: Just before Phase 1 → DEBUG PING
+			timers.push(setTimeout(() => {
+				playDebugPing(); // DEBUG: Phase 0→1 boundary
+			}, BREATHING_TIMING.PHASE_DURATION - 100));
+
+			// 7000ms: Start Phase 1, inhale
 			timers.push(setTimeout(() => {
 				setCurrentPhase(1);
 				setCurrentBreathingPhase('inhale');
-
-				// Phase 1: Inhale → Exhale
-				timers.push(setTimeout(() => {
-					setCurrentBreathingPhase('exhale');
-				}, BREATHING_TIMING.INHALE_DURATION));
-
-				// Move to Phase 2 after two complete phases
-				timers.push(setTimeout(() => {
-					setCurrentPhase(2);
-					setCurrentBreathingPhase('inhale');
-
-					// Phase 2: Inhale → Hold
-					timers.push(setTimeout(() => {
-						setCurrentBreathingPhase('hold');
-					}, BREATHING_TIMING.INHALE_DURATION));
-
-					// Navigate to exercise after hold
-					timers.push(setTimeout(() => {
-						startExercise();
-						router.replace('/practice/exercise' as any);
-					}, BREATHING_TIMING.INHALE_DURATION + BREATHING_TIMING.HOLD_DURATION));
-				}, BREATHING_TIMING.PHASE_DURATION));
 			}, BREATHING_TIMING.PHASE_DURATION));
+
+			// 10500ms: End of second inhale → Start exhale + DEBUG PING
+			timers.push(setTimeout(() => {
+				playDebugPing(); // DEBUG: End of Phase 1 inhale
+				setCurrentBreathingPhase('exhale');
+			}, BREATHING_TIMING.PHASE_DURATION + BREATHING_TIMING.INHALE_DURATION));
+
+			// 13900ms: Just before Phase 2 → DEBUG PING
+			timers.push(setTimeout(() => {
+				playDebugPing(); // DEBUG: Phase 1→2 boundary
+			}, (BREATHING_TIMING.PHASE_DURATION * 2) - 100));
+
+			// 14000ms: Start Phase 2, inhale
+			timers.push(setTimeout(() => {
+				setCurrentPhase(2);
+				setCurrentBreathingPhase('inhale');
+			}, BREATHING_TIMING.PHASE_DURATION * 2));
+
+			// 17500ms: End of third inhale → Start hold
+			timers.push(setTimeout(() => {
+				setCurrentBreathingPhase('hold');
+			}, (BREATHING_TIMING.PHASE_DURATION * 2) + BREATHING_TIMING.INHALE_DURATION));
+
+			// 18500ms: Navigate to exercise + DEBUG PING
+			timers.push(setTimeout(() => {
+				playDebugPing(); // DEBUG: Preparation→Exercise transition
+				startExercise();
+				router.replace('/practice/exercise' as any);
+			}, (BREATHING_TIMING.PHASE_DURATION * 2) + BREATHING_TIMING.INHALE_DURATION + BREATHING_TIMING.HOLD_DURATION));
 		};
 
 		runBreathingSequence();

@@ -87,6 +87,13 @@ export const AUDIO_MANIFEST: Record<AudioId, AudioMetadata> = {
 		durationMs: 5000,
 		description: 'Laatste inademen en vasthouden',
 	},
+	'debug-ping': {
+		id: 'debug-ping',
+		source: require('@/assets/audio/ui/debug-beep.mp3'),
+		category: 'ui',
+		durationMs: 1000,
+		description: 'Debug pieptoon voor timing verificatie',
+	},
 };
 
 /**
@@ -105,4 +112,37 @@ export const AUDIO_SEQUENCES = {
 		'breathing-prep-phase-2',
 		'breathing-prep-phase-3',
 	] as AudioId[],
+};
+
+/**
+ * Play debug ping sound for timing verification
+ * Only plays in development mode (__DEV__)
+ * Uses expo-audio directly to avoid interfering with instructional audio context
+ * Gracefully fails if audio cannot be played
+ */
+export const playDebugPing = async () => {
+	if (!__DEV__) return;
+
+	try {
+		const {createAudioPlayer, setAudioModeAsync} = require('expo-audio');
+
+		// Configure audio to play in silent mode
+		await setAudioModeAsync({
+			playsInSilentModeIOS: true,
+		});
+
+		// Create player and play
+		const player = createAudioPlayer(AUDIO_MANIFEST['debug-ping'].source);
+		player.play();
+
+		// Auto-cleanup when finished
+		const subscription = player.addListener('playbackStatusUpdate', (status: any) => {
+			if (status.didJustFinish) {
+				subscription.remove();
+				player.release();
+			}
+		});
+	} catch (err) {
+		console.error('[DEBUG] Failed to play debug-ping:', err);
+	}
 };

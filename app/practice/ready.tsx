@@ -11,6 +11,7 @@ import {ThemedText} from '@/components/themed-text';
 import {BreathingCircle} from '@/components/breathing-circle';
 import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
+import {playDebugPing} from '@/constants/audio';
 
 export default function PracticeReadyScreen() {
     const {setReady} = usePracticeSession();
@@ -21,6 +22,7 @@ export default function PracticeReadyScreen() {
     }, [setReady]);
 
     const handleStart = () => {
+        playDebugPing(); // DEBUG: Ready→Preparation transition
         // Navigate to breathing preparation
         router.replace('/practice/preparation' as any);
     };
