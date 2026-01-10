@@ -166,12 +166,7 @@ export default function PracticeExerciseScreen() {
         // Stop audio
         stop();
 
-        // If in hold phase, record the duration before pausing
-        if (currentPhase === 'hold') {
-            endBreathHold();
-        }
-
-        // Transition to paused state
+        // Transition to paused state (keeps breathHoldStartTime intact)
         pauseExercise();
 
         // Navigate to paused screen

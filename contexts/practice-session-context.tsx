@@ -229,7 +229,13 @@ function practiceSessionReducer(state: PracticeSessionState, action: Action): Pr
 				console.warn(`Invalid transition: ${state.currentState} -> idle`);
 				return state;
 			}
-			return defaultState;
+			// Explicitly reset all fields including breath hold data (like END_BREATH_HOLD does)
+			// Use spread to create new object reference for proper re-renders
+			return {
+				...defaultState,
+				breathHoldStartTime: null,
+				breathHoldDuration: 0,
+			};
 		}
 
 		case 'NEXT_INSTRUCTION': {

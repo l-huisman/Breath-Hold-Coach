@@ -10,8 +10,8 @@
  * - Auto-navigates to exercise screen after completion
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
 import { BreathingCircle } from '@/components/breathing-circle';
@@ -34,12 +34,15 @@ const BREATHING_TIMING = {
 } as const;
 
 export default function PracticePreparationScreen() {
-	const { startExercise } = usePracticeSession();
+	const { startExercise, pauseExercise } = usePracticeSession();
 	const { playSequence, stop } = useAudio();
 
 	const [currentPhase, setCurrentPhase] = useState<PreparationPhase>(0);
 	const [currentBreathingPhase, setCurrentBreathingPhase] = useState<BreathingPhase>('inhale');
 	const [error, setError] = useState<string | null>(null);
+
+	// Store timers in ref so we can clear them on pause
+	const timersRef = useRef<number[]>([]);
 
 	// Auto-play audio sequence on mount (audio is just for guidance, timing is controlled separately)
 	useEffect(() => {
@@ -75,54 +78,55 @@ export default function PracticePreparationScreen() {
 		//
 		// Debug pings fire at phase END boundaries (before state changes)
 
-		const timers: number[] = [];
-
 		const runBreathingSequence = () => {
+			// Clear any existing timers
+			timersRef.current.forEach(timer => clearTimeout(timer));
+			timersRef.current = [];
 			// 0ms: Start Phase 0, inhale
 			setCurrentPhase(0);
 			setCurrentBreathingPhase('inhale');
 
 			// 3500ms: End of first inhale → Start exhale + DEBUG PING
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 0 inhale
 				setCurrentBreathingPhase('exhale');
 			}, BREATHING_TIMING.INHALE_DURATION));
 
 			// 6900ms: Just before Phase 1 → DEBUG PING
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: Phase 0→1 boundary
 			}, BREATHING_TIMING.PHASE_DURATION - 100));
 
 			// 7000ms: Start Phase 1, inhale
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(1);
 				setCurrentBreathingPhase('inhale');
 			}, BREATHING_TIMING.PHASE_DURATION));
 
 			// 10500ms: End of second inhale → Start exhale + DEBUG PING
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 1 inhale
 				setCurrentBreathingPhase('exhale');
 			}, BREATHING_TIMING.PHASE_DURATION + BREATHING_TIMING.INHALE_DURATION));
 
 			// 13900ms: Just before Phase 2 → DEBUG PING
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: Phase 1→2 boundary
 			}, (BREATHING_TIMING.PHASE_DURATION * 2) - 100));
 
 			// 14000ms: Start Phase 2, inhale
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(2);
 				setCurrentBreathingPhase('inhale');
 			}, BREATHING_TIMING.PHASE_DURATION * 2));
 
 			// 17500ms: End of third inhale → Start hold
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				setCurrentBreathingPhase('hold');
 			}, (BREATHING_TIMING.PHASE_DURATION * 2) + BREATHING_TIMING.INHALE_DURATION));
 
 			// 18500ms: Navigate to exercise + DEBUG PING
-			timers.push(setTimeout(() => {
+			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: Preparation→Exercise transition
 				startExercise();
 				router.replace('/practice/exercise' as any);
@@ -133,9 +137,27 @@ export default function PracticePreparationScreen() {
 
 		return () => {
 			// Clear all timers to prevent memory leaks
-			timers.forEach(timer => clearTimeout(timer));
+			timersRef.current.forEach(timer => clearTimeout(timer));
+			timersRef.current = [];
 		};
 	}, [startExercise]);
+
+	// Handle tap to pause during preparation
+	const handleTapToPause = useCallback(() => {
+		playDebugPing(); // DEBUG: Preparation→Pause transition
+		// Clear all timers
+		timersRef.current.forEach(timer => clearTimeout(timer));
+		timersRef.current = [];
+
+		// Stop audio
+		stop();
+
+		// Transition to paused state
+		pauseExercise();
+
+		// Navigate to paused screen
+		router.push('/practice/paused' as any);
+	}, [pauseExercise, stop]);
 
 	// Fallback: Manual next button if audio fails
 	const handleManualNext = useCallback(() => {
@@ -163,7 +185,13 @@ export default function PracticePreparationScreen() {
 	};
 
 	return (
-		<View style={styles.container}>
+		<Pressable
+			style={styles.container}
+			onPress={handleTapToPause}
+			accessibilityRole="button"
+			accessibilityLabel="Voorbereiding scherm"
+			accessibilityHint="Tik ergens om te pauzeren"
+		>
 			{/* Top spacer - pushes content to vertical center */}
 			<View style={styles.spacer} />
 
@@ -208,7 +236,7 @@ export default function PracticePreparationScreen() {
 					</Button>
 				</View>
 			)}
-		</View>
+		</Pressable>
 	);
 }
 
