@@ -37,7 +37,7 @@ export default function PracticePausedScreen() {
     const handleRestart = () => {
         resetSession();
         // Navigate to preparation screen to restart breathing cycle
-        router.replace('/practice/preparation');
+        router.replace('/practice/ready');
     };
 
     const handleHome = () => {
