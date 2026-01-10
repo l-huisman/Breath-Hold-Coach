@@ -1,13 +1,13 @@
 // filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/paused.tsx
-import React, { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/button';
-import { Icon } from '@/components/icon';
-import { Colors, Fonts } from '@/constants/theme';
-import { usePracticeSession } from '@/contexts/practice-session-context';
+import React, {useMemo} from 'react';
+import {StyleSheet, View} from 'react-native';
+import {router} from 'expo-router';
+import {ThemedText} from '@/components/themed-text';
+import {ThemedView} from '@/components/themed-view';
+import {Button} from '@/components/button';
+import {Icon} from '@/components/icon';
+import {Colors, Fonts} from '@/constants/theme';
+import {usePracticeSession} from '@/contexts/practice-session-context';
 
 /**
  * Paused state screen - full-screen overlay.
@@ -22,14 +22,12 @@ export default function PracticePausedScreen() {
         // Calculate how long they've held breath in this attempt
         if (session.breathHoldStartTime) {
             const pauseTime = new Date();
-            const durationInSeconds = Math.floor(
+            return Math.floor(
                 (pauseTime.getTime() - session.breathHoldStartTime.getTime()) / 1000
             );
-            return durationInSeconds;
         }
         return 0;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Empty deps = freeze at pause moment
+    }, [session.breathHoldStartTime]); // Recalculates when timestamp changes (reset/new session)
 
     // Format for display
     const formattedDuration = currentHoldDuration > 0
@@ -58,7 +56,7 @@ export default function PracticePausedScreen() {
                 <Icon
                     name="pause.fill"
                     size={80}
-                    color={Colors.light.textContrast}
+                    color={Colors.light.text}
                 />
             </View>
 
@@ -120,7 +118,7 @@ const styles = StyleSheet.create({
         padding: 20,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: Colors.light.primary,
+        backgroundColor: Colors.light.background,
     },
     spacer: {
         flex: 1,
@@ -129,31 +127,31 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     statusText: {
-        fontSize: 24,
+        fontSize: Fonts.title2,
         fontFamily: Fonts.bold,
-        color: Colors.light.textContrast,
+        color: Colors.light.text,
         textAlign: 'center',
         marginBottom: 16,
     },
     holdDurationText: {
-        fontSize: 56,
+        fontSize: Fonts.title2,
         fontFamily: Fonts.bold,
-        color: Colors.light.textContrast,
+        color: Colors.light.text,
         textAlign: 'center',
         marginBottom: 8,
     },
     holdDurationLabel: {
-        fontSize: 16,
+        fontSize: Fonts.body,
         fontFamily: Fonts.regular,
-        color: Colors.light.textContrast,
+        color: Colors.light.text,
         textAlign: 'center',
         opacity: 0.9,
         marginBottom: 24,
     },
     infoText: {
-        fontSize: 16,
+        fontSize: Fonts.body,
         fontFamily: Fonts.regular,
-        color: Colors.light.textContrast,
+        color: Colors.light.text,
         textAlign: 'center',
         lineHeight: 24,
     },
