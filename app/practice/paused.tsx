@@ -1,5 +1,5 @@
 // filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/paused.tsx
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedText } from '@/components/themed-text';
@@ -12,27 +12,41 @@ import { usePracticeSession } from '@/contexts/practice-session-context';
 /**
  * Paused state screen - full-screen overlay.
  * No navigation chrome (handled by layout based on route).
- * Allows user to resume or stop the exercise.
+ * Shows current hold duration and allows restart or return home.
  */
 export default function PracticePausedScreen() {
-    const { session, resumeExercise, abandonSession } = usePracticeSession();
+    const { session, resetSession } = usePracticeSession();
 
-    const handleResume = () => {
-        resumeExercise();
-        // Use back() to return naturally to exercise screen
-        router.back();
+    // Calculate current hold duration when paused (frozen snapshot)
+    const currentHoldDuration = useMemo(() => {
+        // Calculate how long they've held breath in this attempt
+        if (session.breathHoldStartTime) {
+            const pauseTime = new Date();
+            const durationInSeconds = Math.floor(
+                (pauseTime.getTime() - session.breathHoldStartTime.getTime()) / 1000
+            );
+            return durationInSeconds;
+        }
+        return 0;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Empty deps = freeze at pause moment
+
+    // Format for display
+    const formattedDuration = currentHoldDuration > 0
+        ? `${currentHoldDuration} seconden`
+        : '0 seconden';
+
+    const handleRestart = () => {
+        resetSession();
+        // Navigate to preparation screen to restart breathing cycle
+        router.replace('/practice/preparation');
     };
 
-    const handleStop = () => {
-        abandonSession();
-        // Use replace to prevent back navigation
-        router.replace('/practice/finish' as any);
+    const handleHome = () => {
+        resetSession();
+        // Navigate directly to home tab, clear practice stack
+        router.replace('/(tabs)');
     };
-
-    // Format best breath hold for display
-    const formattedBestHold = session.breathHoldDuration > 0
-        ? `${session.breathHoldDuration}s`
-        : '0s';
 
     return (
         <ThemedView style={styles.container}>
@@ -57,13 +71,18 @@ export default function PracticePausedScreen() {
                 Oefening gepauzeerd
             </ThemedText>
 
-            {/* Timer Display - Show best hold */}
+            {/* Current Hold Duration - large, centered */}
             <ThemedText
-                style={styles.timerText}
-                accessibilityLabel={`Beste ademhouding: ${formattedBestHold}`}
+                style={styles.holdDurationText}
+                accessibilityLabel={`Je hebt ${formattedDuration} volgehouden`}
                 accessibilityLiveRegion="polite"
             >
-                {formattedBestHold}
+                {formattedDuration}
+            </ThemedText>
+
+            {/* Label for duration */}
+            <ThemedText style={styles.holdDurationLabel}>
+                vastgehouden
             </ThemedText>
 
             {/* Info Text */}
@@ -77,19 +96,18 @@ export default function PracticePausedScreen() {
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
                 <Button
-                    onPress={handleResume}
-                    accessibilityLabel="Hervat oefening"
-                    accessibilityHint="Tik om de oefening te hervatten"
+                    onPress={handleRestart}
+                    accessibilityLabel="Opnieuw beginnen"
+                    accessibilityHint="Tik om de oefening opnieuw te starten vanaf de voorbereiding"
                 >
-                    Hervat
+                    Opnieuw beginnen
                 </Button>
                 <Button
-                    onPress={handleStop}
-                    accessibilityLabel="Stop oefening"
-                    accessibilityHint="Tik om de oefening te stoppen"
-                    style={styles.stopButton}
+                    onPress={handleHome}
+                    accessibilityLabel="Terug naar Home"
+                    accessibilityHint="Tik om terug te gaan naar het startscherm"
                 >
-                    Stop oefening
+                    Terug naar Home
                 </Button>
             </View>
         </ThemedView>
@@ -117,12 +135,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 16,
     },
-    timerText: {
+    holdDurationText: {
         fontSize: 56,
         fontFamily: Fonts.bold,
         color: Colors.light.textContrast,
         textAlign: 'center',
         marginBottom: 8,
+    },
+    holdDurationLabel: {
+        fontSize: 16,
+        fontFamily: Fonts.regular,
+        color: Colors.light.textContrast,
+        textAlign: 'center',
+        opacity: 0.9,
+        marginBottom: 24,
     },
     infoText: {
         fontSize: 16,
@@ -135,10 +161,5 @@ const styles = StyleSheet.create({
         width: '100%',
         gap: 12,
         paddingBottom: 40,
-    },
-    stopButton: {
-        backgroundColor: Colors.light.textContrast,
-        borderWidth: 2,
-        borderColor: Colors.light.textContrast,
     },
 });
