@@ -35,6 +35,7 @@ jest.mock('@/constants/audio', () => ({
             'breathing-prep-phase-3',
         ],
     },
+    playDebugPing: jest.fn(() => Promise.resolve()),
 }));
 
 // Mock navigation
@@ -48,6 +49,20 @@ jest.mock('expo-router', () => ({
 // Mock contexts
 jest.mock('@/contexts/practice-session-context');
 jest.mock('@/contexts/audio-context');
+
+// Mock useHaptics hook
+jest.mock('@/hooks/useHaptics', () => ({
+    useHaptics: jest.fn(() => ({
+        phaseTransition: jest.fn(() => Promise.resolve()),
+        inhale: jest.fn(() => Promise.resolve()),
+        exhale: jest.fn(() => Promise.resolve()),
+        holdStart: jest.fn(() => Promise.resolve()),
+        tick: jest.fn(() => Promise.resolve()),
+        complete: jest.fn(() => Promise.resolve()),
+        isEnabled: true,
+        setEnabled: jest.fn(),
+    })),
+}));
 
 // Mock BreathingCircle component
 jest.mock('@/components/breathing-circle', () => ({
