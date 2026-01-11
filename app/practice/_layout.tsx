@@ -23,12 +23,13 @@ export default function PracticeLayout() {
 
     // Determine if current screen should be full-screen (no chrome)
     // Use exact pathname matching to avoid false positives
-    // Full-screen routes: ready, preparation, exercise, paused
+    // Full-screen routes: ready, preparation, exercise, paused, finish
     const isFullScreen =
         pathname === '/practice/ready' ||
         pathname === '/practice/preparation' ||
         pathname === '/practice/exercise' ||
-        pathname === '/practice/paused';
+        pathname === '/practice/paused' ||
+        pathname === '/practice/finish';
 
     // Handle session completion callback
     // NOTE: Includes 'progress' in dependencies to ensure fresh data.

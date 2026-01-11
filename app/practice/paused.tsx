@@ -8,14 +8,18 @@ import {Button} from '@/components/button';
 import {Icon} from '@/components/icon';
 import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
+import {useUser} from '@/contexts/user-context';
+import {saveSession, NewExerciseSession} from '@/services/statistics-service';
 
 /**
  * Paused state screen - full-screen overlay.
  * No navigation chrome (handled by layout based on route).
  * Shows current hold duration and allows restart or return home.
+ * Saves abandoned session when returning home.
  */
 export default function PracticePausedScreen() {
     const { session, resetSession } = usePracticeSession();
+    const { settings } = useUser();
 
     // Calculate current hold duration when paused (frozen snapshot)
     const currentHoldDuration = useMemo(() => {
@@ -40,10 +44,28 @@ export default function PracticePausedScreen() {
         router.replace('/practice/ready');
     };
 
-    const handleHome = () => {
-        resetSession();
-        // Navigate directly to home tab, clear practice stack
-        router.replace('/(tabs)');
+    const handleHome = async () => {
+        try {
+            // Save abandoned session before leaving
+            const sessionData: NewExerciseSession = {
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                startTime: session.sessionStartTime?.toISOString() || new Date().toISOString(),
+                endTime: new Date().toISOString(), // Now (when abandoned)
+                breathHoldDuration: currentHoldDuration, // Use calculated duration
+                targetDuration: settings.breathHoldGoal,
+                wasCompleted: false, // Abandoned
+                wasSkipped: session.instructionsSkipped,
+            };
+
+            await saveSession(sessionData);
+        } catch (error) {
+            // Log but don't block navigation
+            console.error('Failed to save abandoned session:', error);
+        } finally {
+            resetSession();
+            // Navigate directly to home tab, clear practice stack
+            router.replace('/(tabs)');
+        }
     };
 
     return (

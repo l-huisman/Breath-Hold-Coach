@@ -1,24 +1,84 @@
-// filepath: /Users/lh/Documents/School/HBO/HBO 2526/Minor App Design & Development/Frontend Development/Breath-Hold-Coach/app/practice/finish.tsx
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+/**
+ * Practice Finish Screen
+ * Completion screen shown after successfully finishing the breathing exercise.
+ *
+ * Design: Matches exercise.tsx and preparation.tsx pattern
+ * - Light cyan background with breathing circle
+ * - Red accent circle overlay
+ * - Center content showing duration and success
+ * - Bottom instruction text
+ * - Tap anywhere to return home
+ */
+
+import React, { useEffect, useRef } from 'react';
+import { StyleSheet, View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Button } from '@/components/button';
-import { Icon } from '@/components/icon';
+import { BreathingCircle } from '@/components/breathing-circle';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
+import { useUser } from '@/contexts/user-context';
+import { saveSession, NewExerciseSession } from '@/services/statistics-service';
 
-/**
- * Completion screen with summary after finishing exercise.
- * Shows placeholder stats that will be populated by timer logic in issue #44.
- * Statistics persistence will be added in issue #52.
- */
 export default function PracticeFinishScreen() {
     const { session, resetSession } = usePracticeSession();
+    const { settings, progress, updateProgress } = useUser();
+    const hasSaved = useRef(false);
 
-    const handleFinish = () => {
+    // Check if this is a new personal best
+    const isNewBest = session.breathHoldDuration > progress.currentBreathHold;
+
+    // Save session and update progress on mount
+    useEffect(() => {
+        const saveSessionData = async () => {
+            if (hasSaved.current) return; // Prevent double-save
+            hasSaved.current = true;
+
+            try {
+                // Prepare session data
+                const sessionData: NewExerciseSession = {
+                    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                    startTime: session.sessionStartTime?.toISOString() || new Date().toISOString(),
+                    endTime: session.sessionEndTime?.toISOString() || new Date().toISOString(),
+                    breathHoldDuration: session.breathHoldDuration,
+                    targetDuration: settings.breathHoldGoal,
+                    wasCompleted: session.wasCompleted,
+                    wasSkipped: session.instructionsSkipped,
+                };
+
+                // Save to statistics
+                await saveSession(sessionData);
+
+                // Update user progress if new best
+                if (isNewBest) {
+                    const today = new Date().toISOString().split('T')[0];
+
+                    await updateProgress({
+                        currentBreathHold: session.breathHoldDuration,
+                        completedExercises: progress.completedExercises + 1,
+                        lastPracticeDate: today,
+                    });
+                }
+            } catch (error) {
+                // Log error but don't block UI
+                console.error('Failed to save session:', error);
+            }
+        };
+
+        saveSessionData();
+    }, [
+        session.breathHoldDuration,
+        session.sessionStartTime,
+        session.sessionEndTime,
+        session.wasCompleted,
+        session.instructionsSkipped,
+        settings.breathHoldGoal,
+        isNewBest,
+        progress.completedExercises,
+        updateProgress,
+    ]);
+
+    const handleTapToContinue = () => {
         resetSession();
         // Replace to clear practice stack and return to home
         router.replace('/(tabs)');
@@ -26,109 +86,113 @@ export default function PracticeFinishScreen() {
 
     // Format breath hold duration for display
     const formattedDuration = session.breathHoldDuration > 0
-        ? `${session.breathHoldDuration} seconden`
-        : 'Geen ademhouding gemeten';
+        ? `${session.breathHoldDuration}s`
+        : '0s';
 
     return (
-        <SafeAreaView style={styles.safeArea} edges={['top']}>
-            <ThemedView style={styles.container}>
-                {/* Spacer */}
-                <View style={styles.spacer} />
+        <Pressable
+            style={styles.container}
+            onPress={handleTapToContinue}
+            accessibilityRole="button"
+            accessibilityLabel="Voltooiingsscherm"
+            accessibilityHint="Tik ergens om terug te gaan naar home"
+        >
+            {/* Top spacer - pushes content to vertical center */}
+            <View style={styles.spacer} />
 
-                {/* Success Icon */}
-                <View style={styles.iconContainer}>
-                    <Icon
-                        name="star.fill"
-                        size={80}
-                        color={Colors.light.accent}
-                    />
-                </View>
+            {/* Center content area - circles and content layered together */}
+            <View style={styles.centerContent}>
+                {/* Breathing Circle - idle/hold state for completion */}
+                <BreathingCircle phase="hold" />
 
-                {/* Success Message */}
-                <ThemedText
-                    style={styles.header}
-                    accessibilityRole="header"
-                >
-                    Goed gedaan!
-                </ThemedText>
+                {/* Accent circle - overlaid on wave circles */}
+                <View style={styles.accentCircle} />
 
-                {/* Summary Stats */}
-                <View style={styles.statsContainer}>
-                    <ThemedText style={styles.statLabel}>
-                        Je hebt volgehouden:
-                    </ThemedText>
-                    <ThemedText style={styles.statValue}>
+                {/* Text content wrapper - centered as a unit */}
+                <View style={styles.textWrapper}>
+                    {/* Duration Display */}
+                    <ThemedText
+                        style={styles.durationText}
+                        accessibilityLabel={`Je hebt ${session.breathHoldDuration} seconden volgehouden`}
+                        accessibilityLiveRegion="polite"
+                    >
                         {formattedDuration}
                     </ThemedText>
+
+                    {/* New Best Badge - Conditionally rendered */}
+                    {isNewBest && (
+                        <ThemedText style={styles.newBestBadge}>
+                            Nieuw record!
+                        </ThemedText>
+                    )}
                 </View>
+            </View>
 
-                {/* Encouragement Text */}
-                <ThemedText style={styles.encouragementText}>
-                    Elke oefening brengt je dichter bij je doel van 45 seconden
-                </ThemedText>
+            {/* Bottom spacer - balances top spacer */}
+            <View style={styles.spacer} />
 
-                {/* Spacer */}
-                <View style={styles.spacer} />
-
-                {/* Home Button */}
-                <Button
-                    onPress={handleFinish}
-                    accessibilityLabel="Naar Home"
-                    accessibilityHint="Tik om terug te gaan naar het startscherm"
+            {/* Bottom instruction text */}
+            <View style={styles.bottomContainer}>
+                <ThemedText
+                    style={styles.bottomInstructionText}
+                    accessibilityLabel="Tik ergens op het scherm om door te gaan"
                 >
-                    Naar Home
-                </Button>
-            </ThemedView>
-        </SafeAreaView>
+                    Tik ergens op het scherm om door te gaan
+                </ThemedText>
+            </View>
+        </Pressable>
     );
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-    },
     container: {
         flex: 1,
-        padding: 20,
-        justifyContent: 'center',
+        backgroundColor: Colors.light.secondary,
         alignItems: 'center',
     },
     spacer: {
         flex: 1,
     },
-    iconContainer: {
-        marginBottom: 24,
+    centerContent: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    header: {
-        fontSize: 32,
+    accentCircle: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        borderWidth: 4,
+        borderColor: Colors.light.accent,
+        backgroundColor: Colors.light.secondary,
+    },
+    textWrapper: {
+        position: 'absolute',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    durationText: {
+        fontSize: Fonts.title1,
         fontFamily: Fonts.bold,
         color: Colors.light.text,
         textAlign: 'center',
-        marginBottom: 32,
+        lineHeight: 32,
     },
-    statsContainer: {
-        alignItems: 'center',
-        gap: 8,
-        marginBottom: 24,
-    },
-    statLabel: {
-        fontSize: 16,
-        fontFamily: Fonts.regular,
-        color: Colors.light.textMuted,
+    newBestBadge: {
+        fontSize: Fonts.body,
+        fontFamily: Fonts.semiBold,
+        color: Colors.light.accent,
         textAlign: 'center',
+        marginTop: 8,
     },
-    statValue: {
-        fontSize: 48,
-        fontFamily: Fonts.bold,
-        color: Colors.light.primary,
-        textAlign: 'center',
+    bottomContainer: {
+        paddingBottom: 32,
     },
-    encouragementText: {
-        fontSize: 16,
-        fontFamily: Fonts.regular,
-        color: Colors.light.textMuted,
+    bottomInstructionText: {
+        fontSize: Fonts.body,
+        fontFamily: Fonts.semiBold,
+        color: Colors.light.text,
         textAlign: 'center',
-        lineHeight: 24,
-        paddingHorizontal: 20,
     },
 });
