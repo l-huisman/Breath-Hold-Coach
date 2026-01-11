@@ -8,7 +8,7 @@ interface ProgressIndicatorProps {
    */
   seconds: number;
   /**
-   * Maximum seconds possible (default: 45)
+   * Maximum seconds possible (default: 40)
    */
   maxSeconds?: number;
   /**
@@ -23,7 +23,7 @@ interface ProgressIndicatorProps {
 
 export function ProgressIndicator({
   seconds,
-  maxSeconds = 45,
+  maxSeconds = 40,
   label = 'Progressie van oefenen',
   icon,
 }: ProgressIndicatorProps) {

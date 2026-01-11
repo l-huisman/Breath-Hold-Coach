@@ -46,7 +46,7 @@ describe('UserContext', () => {
       });
 
       expect(result.current.settings).toEqual({
-        breathHoldGoal: 45,
+        breathHoldGoal: 40,
         dailyGoal: 5,
         dailyReminder: false,
         dailyReminderTime: null,
@@ -222,7 +222,7 @@ describe('UserContext', () => {
       });
 
       expect(result.current.user.name).toBe('Tineke Stoffers');
-      expect(result.current.settings.breathHoldGoal).toBe(45);
+      expect(result.current.settings.breathHoldGoal).toBe(40);
     });
 
     it('should handle storage errors gracefully', async () => {
@@ -266,6 +266,69 @@ describe('UserContext', () => {
       );
       expect(AsyncStorage.getItem).toHaveBeenCalledWith('@breathhold:settings');
       expect(AsyncStorage.getItem).toHaveBeenCalledWith('@breathhold:progress');
+    });
+
+    it('should migrate old breathHoldGoal from 45 to 40', async () => {
+      const oldSettings = {
+        breathHoldGoal: 45,
+        dailyGoal: 5,
+        dailyReminder: false,
+        dailyReminderTime: null,
+      };
+
+      (AsyncStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+        if (key === '@breathhold:settings') {
+          return Promise.resolve(JSON.stringify(oldSettings));
+        }
+        return Promise.resolve(null);
+      });
+
+      const { result } = renderHook(() => useUser(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Should have migrated to new value
+      expect(result.current.settings.breathHoldGoal).toBe(40);
+
+      // Should have saved the migrated value back to storage
+      await waitFor(() => {
+        expect(AsyncStorage.setItem).toHaveBeenCalledWith(
+          '@breathhold:settings',
+          JSON.stringify({
+            breathHoldGoal: 40,
+            dailyGoal: 5,
+            dailyReminder: false,
+            dailyReminderTime: null,
+          })
+        );
+      });
+    });
+
+    it('should not migrate breathHoldGoal if it is not 45', async () => {
+      const customSettings = {
+        breathHoldGoal: 50,
+        dailyGoal: 5,
+        dailyReminder: false,
+        dailyReminderTime: null,
+      };
+
+      (AsyncStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+        if (key === '@breathhold:settings') {
+          return Promise.resolve(JSON.stringify(customSettings));
+        }
+        return Promise.resolve(null);
+      });
+
+      const { result } = renderHook(() => useUser(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Should keep custom value unchanged
+      expect(result.current.settings.breathHoldGoal).toBe(50);
     });
   });
 

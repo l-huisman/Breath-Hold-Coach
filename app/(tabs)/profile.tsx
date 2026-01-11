@@ -311,7 +311,7 @@ export default function ProfileScreen() {
                                 label="Ademhoud doel (seconden)"
                                 value={breathHoldGoal}
                                 onChangeText={setBreathHoldGoal}
-                                placeholder="45"
+                                placeholder="40"
                                 icon={<Icon name="target" size={24} color={Colors.light.text}/>}
                                 keyboardType="numeric"
                                 accessibilityLabel="Ademhoud doel in seconden"
