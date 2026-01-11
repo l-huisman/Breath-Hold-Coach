@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         width: 200,
         height: 200,
-        borderRadius: 200 * 200 / 2,
+        borderRadius: 100,
         borderWidth: 4,
         borderColor: Colors.light.accent,
         backgroundColor: Colors.light.secondary,
