@@ -69,7 +69,7 @@ export const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
 ];
 
 const defaultUser: UserDetails = {
-    name: 'Tineke Stoffers',
+    name: 'Tineke',
     dateOfBirth: new Date('1960-01-01'),
     patientNumber: '684651',
     assistiveLearning: false,

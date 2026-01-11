@@ -31,7 +31,7 @@ describe('UserContext', () => {
       });
 
       expect(result.current.user).toEqual({
-        name: 'Tineke Stoffers',
+        name: 'Tineke',
         dateOfBirth: new Date('1960-01-01'),
         patientNumber: '684651',
         assistiveLearning: false,
@@ -221,7 +221,7 @@ describe('UserContext', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.user.name).toBe('Tineke Stoffers');
+      expect(result.current.user.name).toBe('Tineke');
       expect(result.current.settings.breathHoldGoal).toBe(40);
     });
 
@@ -240,7 +240,7 @@ describe('UserContext', () => {
       });
 
       // Should use defaults on error
-      expect(result.current.user.name).toBe('Tineke Stoffers');
+      expect(result.current.user.name).toBe('Tineke');
       expect(consoleError).toHaveBeenCalledWith(
         'Failed to load user data from storage:',
         expect.any(Error)
