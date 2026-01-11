@@ -78,6 +78,8 @@ export default function PracticeFinishScreen() {
         updateProgress,
     ]);
 
+    // Note: Complete haptic already fired in exercise.tsx before navigation
+
     const handleTapToContinue = () => {
         resetSession();
         // Replace to clear practice stack and return to home

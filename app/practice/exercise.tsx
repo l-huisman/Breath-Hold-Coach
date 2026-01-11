@@ -23,6 +23,7 @@ import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
 import {useAudio} from '@/contexts/audio-context';
 import {AUDIO_SEQUENCES, playDebugPing} from '@/constants/audio';
+import {useHaptics} from '@/hooks/useHaptics';
 
 // Exercise phase types
 type ExercisePhaseType =
@@ -52,6 +53,7 @@ export default function PracticeExerciseScreen() {
         setExercisePhase,
     } = usePracticeSession();
     const {playSequence, stop} = useAudio();
+    const haptics = useHaptics();
 
     // Local state for exercise phases
     const [currentPhase, setCurrentPhase] = useState<ExercisePhaseType>('hold');
@@ -92,6 +94,21 @@ export default function PracticeExerciseScreen() {
         return () => clearInterval(interval);
     }, [currentPhase, getCurrentBreathHoldDuration]);
 
+    // Countdown tick haptics every 10 seconds during hold phase
+    useEffect(() => {
+        if (currentPhase !== 'hold') {
+            return;
+        }
+
+        // Trigger tick haptic every 10 seconds (10000ms)
+        const interval = setInterval(() => {
+            haptics.tick(); // Haptic: Subtle progress indicator
+        }, 10000);
+
+        return () => clearInterval(interval);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPhase]);
+
     // Main exercise state machine - runs on mount
     // Note: Breathing preparation (inhale/exhale cycles) is handled in preparation.tsx
     // This phase starts directly with the hold phase (the actual medical exercise)
@@ -109,6 +126,7 @@ export default function PracticeExerciseScreen() {
             // Start breath hold tracking in context
             startBreathHold();
             playDebugPing(); // DEBUG: Exercise start (hold begins)
+            // Note: holdStart haptic already fired in preparation.tsx when entering hold phase
 
             // === PHASE: complete (auto after 40s) ===
             timers.push(
@@ -119,6 +137,9 @@ export default function PracticeExerciseScreen() {
 
                     // Transition to complete
                     setCurrentPhase('complete');
+
+                    // Haptic: Success feedback for completion
+                    haptics.complete();
 
                     // Finish exercise and navigate
                     finishExercise();
@@ -134,6 +155,7 @@ export default function PracticeExerciseScreen() {
             timers.forEach((timer) => clearTimeout(timer));
             stop(); // Stop audio
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
 
     // Play audio cues based on phase transitions

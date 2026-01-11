@@ -10,6 +10,22 @@ jest.mock('expo-audio', () => ({
     setAudioModeAsync: jest.fn(),
 }));
 
+// Mock expo-haptics
+jest.mock('expo-haptics', () => ({
+    ImpactFeedbackStyle: {
+        Light: 'light',
+        Medium: 'medium',
+        Heavy: 'heavy',
+    },
+    NotificationFeedbackType: {
+        Success: 'success',
+        Warning: 'warning',
+        Error: 'error',
+    },
+    impactAsync: jest.fn(() => Promise.resolve()),
+    notificationAsync: jest.fn(() => Promise.resolve()),
+}));
+
 // Mock audio constants to avoid requiring MP3 files
 jest.mock('@/constants/audio', () => ({
     AUDIO_SEQUENCES: {
@@ -25,6 +41,7 @@ jest.mock('@/constants/audio', () => ({
 jest.mock('expo-router', () => ({
     router: {
         replace: jest.fn(),
+        push: jest.fn(),
     },
 }));
 
@@ -70,6 +87,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 describe('PracticePreparationScreen', () => {
     const mockStartExercise = jest.fn();
+    const mockPauseExercise = jest.fn();
     const mockPlaySequence = jest.fn();
     const mockStop = jest.fn();
     const mockReplace = jest.fn();
@@ -83,6 +101,7 @@ describe('PracticePreparationScreen', () => {
 
         (usePracticeSession as jest.Mock).mockReturnValue({
             startExercise: mockStartExercise,
+            pauseExercise: mockPauseExercise,
         });
 
         (useAudio as jest.Mock).mockReturnValue({

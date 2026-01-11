@@ -20,6 +20,7 @@ import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
 import { useAudio } from '@/contexts/audio-context';
 import { AUDIO_SEQUENCES, playDebugPing } from '@/constants/audio';
+import { useHaptics } from '@/hooks/useHaptics';
 
 type BreathingPhase = 'inhale' | 'exhale' | 'hold';
 type PreparationPhase = 0 | 1 | 2; // 3 phases total
@@ -36,6 +37,7 @@ const BREATHING_TIMING = {
 export default function PracticePreparationScreen() {
 	const { startExercise, pauseExercise } = usePracticeSession();
 	const { playSequence, stop } = useAudio();
+	const haptics = useHaptics();
 
 	const [currentPhase, setCurrentPhase] = useState<PreparationPhase>(0);
 	const [currentBreathingPhase, setCurrentBreathingPhase] = useState<BreathingPhase>('inhale');
@@ -85,44 +87,52 @@ export default function PracticePreparationScreen() {
 			// 0ms: Start Phase 0, inhale
 			setCurrentPhase(0);
 			setCurrentBreathingPhase('inhale');
+			haptics.inhale(); // Haptic: Signal first inhale
 
-			// 3500ms: End of first inhale → Start exhale + DEBUG PING
+			// 3500ms: End of first inhale → Start exhale + DEBUG PING + HAPTIC
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 0 inhale
+				haptics.exhale(); // Haptic: Signal exhale phase
 				setCurrentBreathingPhase('exhale');
 			}, BREATHING_TIMING.INHALE_DURATION));
 
-			// 6900ms: Just before Phase 1 → DEBUG PING
+			// 6800ms: Just before Phase 1 → DEBUG PING + HAPTIC (200ms before inhale)
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: Phase 0→1 boundary
-			}, BREATHING_TIMING.PHASE_DURATION - 100));
+				haptics.phaseTransition(); // Haptic: Phase transition
+			}, BREATHING_TIMING.PHASE_DURATION - 200));
 
 			// 7000ms: Start Phase 1, inhale
 			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(1);
 				setCurrentBreathingPhase('inhale');
+				haptics.inhale(); // Haptic: Signal inhale phase
 			}, BREATHING_TIMING.PHASE_DURATION));
 
-			// 10500ms: End of second inhale → Start exhale + DEBUG PING
+			// 10500ms: End of second inhale → Start exhale + DEBUG PING + HAPTIC
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 1 inhale
+				haptics.exhale(); // Haptic: Signal exhale phase
 				setCurrentBreathingPhase('exhale');
 			}, BREATHING_TIMING.PHASE_DURATION + BREATHING_TIMING.INHALE_DURATION));
 
-			// 13900ms: Just before Phase 2 → DEBUG PING
+			// 13800ms: Just before Phase 2 → DEBUG PING + HAPTIC (200ms before inhale)
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: Phase 1→2 boundary
-			}, (BREATHING_TIMING.PHASE_DURATION * 2) - 100));
+				haptics.phaseTransition(); // Haptic: Phase transition
+			}, (BREATHING_TIMING.PHASE_DURATION * 2) - 200));
 
 			// 14000ms: Start Phase 2, inhale
 			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(2);
 				setCurrentBreathingPhase('inhale');
+				haptics.inhale(); // Haptic: Signal final inhale
 			}, BREATHING_TIMING.PHASE_DURATION * 2));
 
-			// 17500ms: End of third inhale → Start hold
+			// 17500ms: End of third inhale → Start hold + HAPTIC
 			timersRef.current.push(setTimeout(() => {
 				setCurrentBreathingPhase('hold');
+				haptics.holdStart(); // Haptic: Distinct signal for hold start
 			}, (BREATHING_TIMING.PHASE_DURATION * 2) + BREATHING_TIMING.INHALE_DURATION));
 
 			// 18500ms: Navigate to exercise + DEBUG PING
@@ -140,6 +150,7 @@ export default function PracticePreparationScreen() {
 			timersRef.current.forEach(timer => clearTimeout(timer));
 			timersRef.current = [];
 		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [startExercise]);
 
 	// Handle tap to pause during preparation
