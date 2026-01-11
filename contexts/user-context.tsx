@@ -69,7 +69,7 @@ export const defaultPracticeMomentsAssistiveLearning: PracticeMoment[] = [
 ];
 
 const defaultUser: UserDetails = {
-    name: 'Tineke Stoffers',
+    name: 'Tineke',
     dateOfBirth: new Date('1960-01-01'),
     patientNumber: '684651',
     assistiveLearning: false,
@@ -84,7 +84,7 @@ const defaultPreferences: UserPreferences = {
 // Non-smoker: 5 seconds per day (faster progression)
 // Smoker: 2 seconds per day (smaller steps, more gradual)
 const defaultSettings: UserSettings = {
-    breathHoldGoal: 45,
+    breathHoldGoal: 40,
     dailyGoal: 5, // default for non-smoker
     dailyReminder: false,
     dailyReminderTime: null,
@@ -135,7 +135,16 @@ export function UserProvider({children}: UserProviderProps) {
                 }
 
                 if (settingsData) {
-                    setSettings(JSON.parse(settingsData));
+                    const parsedSettings = JSON.parse(settingsData);
+
+                    // Migration: Update old breathHoldGoal from 45 to 40
+                    if (parsedSettings.breathHoldGoal === 45) {
+                        parsedSettings.breathHoldGoal = 40;
+                        // Save the migrated settings back to storage
+                        await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(parsedSettings));
+                    }
+
+                    setSettings(parsedSettings);
                 }
 
                 if (progressData) {

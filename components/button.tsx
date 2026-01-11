@@ -26,9 +26,13 @@ export type ButtonProps = Omit<PressableProps, 'onPress'> & {
    * Optional onPress handler (ignored if href is provided)
    */
   onPress?: PressableProps['onPress'];
+  /**
+   * Optional text style override (only applies when children is a string)
+   */
+  textStyle?: object;
 };
 
-export function Button({ children, icon, style, href, onPress, ...rest }: ButtonProps) {
+export function Button({ children, icon, style, href, onPress, textStyle, ...rest }: ButtonProps) {
   const isTextContent = typeof children === 'string';
 
   const handlePress = (event: any) => {
@@ -51,7 +55,7 @@ export function Button({ children, icon, style, href, onPress, ...rest }: Button
     >
       {icon && <View style={styles.iconContainer}>{icon}</View>}
       {isTextContent ? (
-        <Text style={styles.text}>{children}</Text>
+        <Text style={[styles.text, textStyle]}>{children}</Text>
       ) : (
         <View style={styles.iconContainer}>{children}</View>
       )}

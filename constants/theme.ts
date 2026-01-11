@@ -11,6 +11,7 @@ export const Colors = {
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        secondary: '#97DDF4',
         tertiary: '#284EA6',
         accent: '#FF4B3E',
         // UI element backgrounds
@@ -31,6 +32,7 @@ export const Colors = {
         background: '#FFFFFF',
         primary: '#284EA6',
         primaryMuted: '#93A6D3',
+        secondary: '#97DDF4',
         tertiary: '#284EA6',
         accent: '#FF4B3E',
         // UI element backgrounds
@@ -54,4 +56,10 @@ export const Fonts = {
     medium: 'Montserrat_500Medium',
     semiBold: 'Montserrat_600SemiBold',
     bold: 'Montserrat_700Bold',
+    title1: 32,
+    title2: 24,
+    title3: 18,
+    subtitle: 16,
+    body: 16,
+    label: 12,
 };
