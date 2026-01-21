@@ -11,7 +11,7 @@
  * Duration: Up to 40 seconds (customizable per user's goal)
  */
 
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {router} from 'expo-router';
 import {useKeepAwake} from 'expo-keep-awake';
@@ -55,6 +55,12 @@ export default function PracticeExerciseScreen() {
     } = usePracticeSession();
     const {play, stop} = useAudio();
     const haptics = useHaptics();
+
+    // Store play function in ref to avoid effect restarts when play identity changes
+    const playRef = useRef(play);
+    useEffect(() => {
+        playRef.current = play;
+    }, [play]);
 
     // Local state for exercise phases
     const [currentPhase, setCurrentPhase] = useState<ExercisePhaseType>('hold');
@@ -124,13 +130,13 @@ export default function PracticeExerciseScreen() {
         milestones.forEach(({ time, audioId }) => {
             milestoneTimers.push(
                 window.setTimeout(() => {
-                    play(audioId).catch(err => console.error(`Milestone audio failed (${audioId}):`, err));
+                    playRef.current(audioId).catch(err => console.error(`Milestone audio failed (${audioId}):`, err));
                 }, time)
             );
         });
 
         return () => milestoneTimers.forEach(clearTimeout);
-    }, [currentPhase, play]);
+    }, [currentPhase]);
 
     // Main exercise state machine - runs on mount
     // Note: Breathing preparation (inhale/exhale cycles) is handled in preparation.tsx
@@ -150,7 +156,7 @@ export default function PracticeExerciseScreen() {
             startBreathHold();
             playDebugPing(); // DEBUG: Exercise start (hold begins)
             // Play breath-hold-starts announcement
-            play('breath-hold-starts').catch(err => console.error('Audio failed:', err));
+            playRef.current('breath-hold-starts').catch(err => console.error('Audio failed:', err));
             // Note: holdStart haptic already fired in preparation.tsx when entering hold phase
 
             // === PHASE: complete (auto after 40s) ===
@@ -167,7 +173,7 @@ export default function PracticeExerciseScreen() {
                     haptics.complete();
 
                     // Play 40 second milestone announcement
-                    play('milestone-40s').catch(err => console.error('Milestone audio failed (40s):', err));
+                    playRef.current('milestone-40s').catch(err => console.error('Milestone audio failed (40s):', err));
 
                     // Finish exercise and navigate after audio delay (1700ms to let audio finish)
                     finishExercise();
@@ -188,7 +194,7 @@ export default function PracticeExerciseScreen() {
             stop(); // Stop audio
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop, play]);
+    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
 
     // Handle tap to pause
     const handleTapToPause = () => {
