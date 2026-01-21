@@ -19,7 +19,7 @@ import { Button } from '@/components/button';
 import { Colors, Fonts } from '@/constants/theme';
 import { usePracticeSession } from '@/contexts/practice-session-context';
 import { useAudio } from '@/contexts/audio-context';
-import { AUDIO_SEQUENCES, playDebugPing } from '@/constants/audio';
+import { playDebugPing } from '@/constants/audio';
 import { useHaptics } from '@/hooks/useHaptics';
 
 type BreathingPhase = 'inhale' | 'exhale' | 'hold';
@@ -36,7 +36,7 @@ const BREATHING_TIMING = {
 
 export default function PracticePreparationScreen() {
 	const { startExercise, pauseExercise } = usePracticeSession();
-	const { playSequence, stop } = useAudio();
+	const { play, stop } = useAudio();
 	const haptics = useHaptics();
 
 	const [currentPhase, setCurrentPhase] = useState<PreparationPhase>(0);
@@ -46,30 +46,12 @@ export default function PracticePreparationScreen() {
 	// Store timers in ref so we can clear them on pause
 	const timersRef = useRef<number[]>([]);
 
-	// Auto-play audio sequence on mount (audio is just for guidance, timing is controlled separately)
+	// Cleanup audio on unmount
 	useEffect(() => {
-		let cancelled = false;
-
-		const startPreparation = async () => {
-			try {
-				if (!cancelled) {
-					await playSequence(AUDIO_SEQUENCES.breathingPreparation);
-				}
-			} catch (err) {
-				console.error('Failed to play preparation audio:', err);
-				if (!cancelled) {
-					setError('Audio kon niet worden afgespeeld. Volg de visuele instructies.');
-				}
-			}
-		};
-
-		startPreparation();
-
 		return () => {
-			cancelled = true;
 			stop();
 		};
-	}, [playSequence, stop]);
+	}, [stop]);
 
 	// Main breathing sequence - time-based (not audio-driven)
 	useEffect(() => {
@@ -84,16 +66,27 @@ export default function PracticePreparationScreen() {
 			// Clear any existing timers
 			timersRef.current.forEach(timer => clearTimeout(timer));
 			timersRef.current = [];
+
+			// Helper to play audio with error handling (graceful degradation)
+			const playAudio = (audioId: 'inhale' | 'exhale' | 'inhale-deep' | 'hold-breath') => {
+				play(audioId).catch(err => {
+					console.error(`Audio playback failed for ${audioId}:`, err);
+					setError('Audio kon niet worden afgespeeld. Volg de visuele instructies.');
+				});
+			};
+
 			// 0ms: Start Phase 0, inhale
 			setCurrentPhase(0);
 			setCurrentBreathingPhase('inhale');
 			haptics.inhale(); // Haptic: Signal first inhale
+			playAudio('inhale'); // Audio: "Adem in"
 
-			// 3500ms: End of first inhale → Start exhale + DEBUG PING + HAPTIC
+			// 3500ms: End of first inhale → Start exhale + DEBUG PING + HAPTIC + AUDIO
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 0 inhale
 				haptics.exhale(); // Haptic: Signal exhale phase
 				setCurrentBreathingPhase('exhale');
+				playAudio('exhale'); // Audio: "Adem uit"
 			}, BREATHING_TIMING.INHALE_DURATION));
 
 			// 6800ms: Just before Phase 1 → DEBUG PING + HAPTIC (200ms before inhale)
@@ -102,18 +95,20 @@ export default function PracticePreparationScreen() {
 				haptics.phaseTransition(); // Haptic: Phase transition
 			}, BREATHING_TIMING.PHASE_DURATION - 200));
 
-			// 7000ms: Start Phase 1, inhale
+			// 7000ms: Start Phase 1, inhale + AUDIO
 			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(1);
 				setCurrentBreathingPhase('inhale');
 				haptics.inhale(); // Haptic: Signal inhale phase
+				playAudio('inhale'); // Audio: "Adem in"
 			}, BREATHING_TIMING.PHASE_DURATION));
 
-			// 10500ms: End of second inhale → Start exhale + DEBUG PING + HAPTIC
+			// 10500ms: End of second inhale → Start exhale + DEBUG PING + HAPTIC + AUDIO
 			timersRef.current.push(setTimeout(() => {
 				playDebugPing(); // DEBUG: End of Phase 1 inhale
 				haptics.exhale(); // Haptic: Signal exhale phase
 				setCurrentBreathingPhase('exhale');
+				playAudio('exhale'); // Audio: "Adem uit"
 			}, BREATHING_TIMING.PHASE_DURATION + BREATHING_TIMING.INHALE_DURATION));
 
 			// 13800ms: Just before Phase 2 → DEBUG PING + HAPTIC (200ms before inhale)
@@ -122,17 +117,19 @@ export default function PracticePreparationScreen() {
 				haptics.phaseTransition(); // Haptic: Phase transition
 			}, (BREATHING_TIMING.PHASE_DURATION * 2) - 200));
 
-			// 14000ms: Start Phase 2, inhale
+			// 14000ms: Start Phase 2, deep inhale + AUDIO
 			timersRef.current.push(setTimeout(() => {
 				setCurrentPhase(2);
 				setCurrentBreathingPhase('inhale');
 				haptics.inhale(); // Haptic: Signal final inhale
+				playAudio('inhale-deep'); // Audio: "Adem diep in"
 			}, BREATHING_TIMING.PHASE_DURATION * 2));
 
-			// 17500ms: End of third inhale → Start hold + HAPTIC
+			// 17500ms: End of third inhale → Start hold + HAPTIC + AUDIO
 			timersRef.current.push(setTimeout(() => {
 				setCurrentBreathingPhase('hold');
 				haptics.holdStart(); // Haptic: Distinct signal for hold start
+				playAudio('hold-breath'); // Audio: "Houd je adem vast"
 			}, (BREATHING_TIMING.PHASE_DURATION * 2) + BREATHING_TIMING.INHALE_DURATION));
 
 			// 18500ms: Navigate to exercise + DEBUG PING
@@ -151,7 +148,7 @@ export default function PracticePreparationScreen() {
 			timersRef.current = [];
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [startExercise]);
+	}, [startExercise, play]);
 
 	// Handle tap to pause during preparation
 	const handleTapToPause = useCallback(() => {

@@ -22,7 +22,8 @@ import {Icon} from '@/components/icon';
 import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
 import {useAudio} from '@/contexts/audio-context';
-import {AUDIO_SEQUENCES, playDebugPing} from '@/constants/audio';
+import {playDebugPing} from '@/constants/audio';
+import {AudioId} from '@/types/audio';
 import {useHaptics} from '@/hooks/useHaptics';
 
 // Exercise phase types
@@ -52,7 +53,7 @@ export default function PracticeExerciseScreen() {
         finishExercise,
         setExercisePhase,
     } = usePracticeSession();
-    const {playSequence, stop} = useAudio();
+    const {play, stop} = useAudio();
     const haptics = useHaptics();
 
     // Local state for exercise phases
@@ -109,6 +110,28 @@ export default function PracticeExerciseScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPhase]);
 
+    // Milestone audio announcements during hold phase
+    useEffect(() => {
+        if (currentPhase !== 'hold') return;
+
+        const milestoneTimers: number[] = [];
+        const milestones: { time: number; audioId: AudioId }[] = [
+            { time: 10000, audioId: 'milestone-10s' },
+            { time: 20000, audioId: 'milestone-20s' },
+            { time: 30000, audioId: 'milestone-30s' },
+        ];
+
+        milestones.forEach(({ time, audioId }) => {
+            milestoneTimers.push(
+                window.setTimeout(() => {
+                    play(audioId).catch(err => console.error(`Milestone audio failed (${audioId}):`, err));
+                }, time)
+            );
+        });
+
+        return () => milestoneTimers.forEach(clearTimeout);
+    }, [currentPhase, play]);
+
     // Main exercise state machine - runs on mount
     // Note: Breathing preparation (inhale/exhale cycles) is handled in preparation.tsx
     // This phase starts directly with the hold phase (the actual medical exercise)
@@ -126,6 +149,8 @@ export default function PracticeExerciseScreen() {
             // Start breath hold tracking in context
             startBreathHold();
             playDebugPing(); // DEBUG: Exercise start (hold begins)
+            // Play breath-hold-starts announcement
+            play('breath-hold-starts').catch(err => console.error('Audio failed:', err));
             // Note: holdStart haptic already fired in preparation.tsx when entering hold phase
 
             // === PHASE: complete (auto after 40s) ===
@@ -141,9 +166,16 @@ export default function PracticeExerciseScreen() {
                     // Haptic: Success feedback for completion
                     haptics.complete();
 
-                    // Finish exercise and navigate
+                    // Play 40 second milestone announcement
+                    play('milestone-40s').catch(err => console.error('Milestone audio failed (40s):', err));
+
+                    // Finish exercise and navigate after audio delay (1700ms to let audio finish)
                     finishExercise();
-                    router.replace('/practice/finish' as any);
+                    timers.push(
+                        window.setTimeout(() => {
+                            router.replace('/practice/finish' as any);
+                        }, 1700)
+                    );
                 }, EXERCISE_TIMING.MAX_HOLD_DURATION)
             );
         };
@@ -156,31 +188,7 @@ export default function PracticeExerciseScreen() {
             stop(); // Stop audio
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
-
-    // Play audio cues based on phase transitions
-    useEffect(() => {
-        // Only play audio for the hold phase (the actual exercise)
-        // Breathing prep audio is handled in preparation.tsx
-        const audioSequences: Record<
-            ExercisePhaseType,
-            (typeof AUDIO_SEQUENCES)[keyof typeof AUDIO_SEQUENCES] | null
-        > = {
-            inhale_exhale_1: null, // Not used - breathing prep done in preparation.tsx
-            inhale_exhale_2: null, // Not used - breathing prep done in preparation.tsx
-            final_inhale: null, // Not used - breathing prep done in preparation.tsx
-            hold: AUDIO_SEQUENCES.startHold,
-            complete: null,
-        };
-
-        const sequence = audioSequences[currentPhase];
-        if (sequence) {
-            playSequence(sequence).catch((err) => {
-                console.error('Audio playback failed:', err);
-                // Continue exercise with visual cues only (graceful degradation)
-            });
-        }
-    }, [currentPhase, playSequence]);
+    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop, play]);
 
     // Handle tap to pause
     const handleTapToPause = () => {
