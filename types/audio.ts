@@ -12,6 +12,7 @@ export type AudioId =
 	| 'mindfulness-reminder'
 	| 'laying-position'
 	// Breathing cues
+	| 'ready'
 	| 'inhale'
 	| 'exhale'
 	| 'inhale-deep'

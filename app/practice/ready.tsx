@@ -11,15 +11,18 @@ import {ThemedText} from '@/components/themed-text';
 import {BreathingCircle} from '@/components/breathing-circle';
 import {Colors, Fonts} from '@/constants/theme';
 import {usePracticeSession} from '@/contexts/practice-session-context';
+import {useAudio} from '@/contexts/audio-context';
 import {playDebugPing} from '@/constants/audio';
 
 export default function PracticeReadyScreen() {
     const {setReady} = usePracticeSession();
+    const {play} = useAudio();
 
-    // Transition to ready state on mount
+    // Transition to ready state and play audio on mount
     useEffect(() => {
         setReady();
-    }, [setReady]);
+        play('ready').catch(err => console.error('Ready audio failed:', err));
+    }, [setReady, play]);
 
     const handleStart = () => {
         playDebugPing(); // DEBUG: Ready→Preparation transition

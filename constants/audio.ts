@@ -33,6 +33,13 @@ export const AUDIO_MANIFEST: Record<AudioId, AudioMetadata> = {
 		description: 'Instructie voor liggende positie',
 	},
 	// Breathing cues (new .m4a files)
+	'ready': {
+		id: 'ready',
+		source: require('@/assets/audio/ready.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
+		description: 'Klaar om te beginnen',
+	},
 	'inhale': {
 		id: 'inhale',
 		source: require('@/assets/audio/inhale.m4a'),
