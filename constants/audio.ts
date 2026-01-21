@@ -195,12 +195,13 @@ export const AUDIO_SEQUENCES = {
 
 /**
  * Play debug ping sound for timing verification
- * Only plays in development mode (__DEV__)
+ * Only plays in development mode (__DEV__) AND when DEBUG_AUDIO=true in .env
  * Uses expo-audio directly to avoid interfering with instructional audio context
  * Gracefully fails if audio cannot be played
  */
 export const playDebugPing = async () => {
 	if (!__DEV__) return;
+	if (process.env.DEBUG_AUDIO !== 'true') return;
 
 	try {
 		const {createAudioPlayer, setAudioModeAsync} = require('expo-audio');
