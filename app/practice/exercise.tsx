@@ -56,11 +56,25 @@ export default function PracticeExerciseScreen() {
     const {play, stop} = useAudio();
     const haptics = useHaptics();
 
-    // Store play function in ref to avoid effect restarts when play identity changes
+    // Store functions in refs to avoid effect restarts when their identity changes
+    // This is critical because finishExercise depends on session state and gets new refs
     const playRef = useRef(play);
+    const startBreathHoldRef = useRef(startBreathHold);
+    const endBreathHoldRef = useRef(endBreathHold);
+    const finishExerciseRef = useRef(finishExercise);
+    const setExercisePhaseRef = useRef(setExercisePhase);
+    const stopRef = useRef(stop);
+    const hapticsRef = useRef(haptics);
+
     useEffect(() => {
         playRef.current = play;
-    }, [play]);
+        startBreathHoldRef.current = startBreathHold;
+        endBreathHoldRef.current = endBreathHold;
+        finishExerciseRef.current = finishExercise;
+        setExercisePhaseRef.current = setExercisePhase;
+        stopRef.current = stop;
+        hapticsRef.current = haptics;
+    }, [play, startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop, haptics]);
 
     // Local state for exercise phases
     const [currentPhase, setCurrentPhase] = useState<ExercisePhaseType>('hold');
@@ -138,7 +152,7 @@ export default function PracticeExerciseScreen() {
         return () => milestoneTimers.forEach(clearTimeout);
     }, [currentPhase]);
 
-    // Main exercise state machine - runs on mount
+    // Main exercise state machine - runs ONCE on mount
     // Note: Breathing preparation (inhale/exhale cycles) is handled in preparation.tsx
     // This phase starts directly with the hold phase (the actual medical exercise)
     useEffect(() => {
@@ -150,10 +164,10 @@ export default function PracticeExerciseScreen() {
             setCurrentPhase('hold');
             setCurrentBreathingPhase('hold');
             setPhaseStartTime(new Date());
-            setExercisePhase('hold');
+            setExercisePhaseRef.current('hold');
 
             // Start breath hold tracking in context
-            startBreathHold();
+            startBreathHoldRef.current();
             playDebugPing(); // DEBUG: Exercise start (hold begins)
             // Play breath-hold-starts announcement
             playRef.current('breath-hold-starts').catch(err => console.error('Audio failed:', err));
@@ -164,19 +178,19 @@ export default function PracticeExerciseScreen() {
                 window.setTimeout(() => {
                     playDebugPing(); // DEBUG: Exercise→Finish transition (40s auto)
                     // End breath hold (calculates duration)
-                    endBreathHold();
+                    endBreathHoldRef.current();
 
                     // Transition to complete
                     setCurrentPhase('complete');
 
                     // Haptic: Success feedback for completion
-                    haptics.complete();
+                    hapticsRef.current.complete();
 
                     // Play 40 second milestone announcement
                     playRef.current('milestone-40s').catch(err => console.error('Milestone audio failed (40s):', err));
 
                     // Finish exercise and navigate after audio delay (1700ms to let audio finish)
-                    finishExercise();
+                    finishExerciseRef.current();
                     timers.push(
                         window.setTimeout(() => {
                             router.replace('/practice/finish' as any);
@@ -191,10 +205,12 @@ export default function PracticeExerciseScreen() {
         // Cleanup: Clear all timers on unmount
         return () => {
             timers.forEach((timer) => clearTimeout(timer));
-            stop(); // Stop audio
+            stopRef.current(); // Stop audio
         };
+        // Empty dependency array - this effect should only run once on mount
+        // All functions are accessed via refs to avoid restarts
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [startBreathHold, endBreathHold, finishExercise, setExercisePhase, stop]);
+    }, []);
 
     // Handle tap to pause
     const handleTapToPause = () => {
