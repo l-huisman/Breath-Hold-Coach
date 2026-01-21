@@ -10,82 +10,107 @@ import { AudioMetadata, AudioId } from '@/types/audio';
  * Maps audio IDs to their source files and metadata
  */
 export const AUDIO_MANIFEST: Record<AudioId, AudioMetadata> = {
+	// Pre-instructions (updated to .m4a in root audio folder)
 	'volume-check': {
 		id: 'volume-check',
-		source: require('@/assets/audio/pre-instructions/volume-check.mp3'),
+		source: require('@/assets/audio/volume-check.m4a'),
 		category: 'pre-instruction',
-		durationMs: 1000,
+		durationMs: 3000,
 		description: 'Controleer je geluidsvolume',
 	},
 	'mindfulness-reminder': {
 		id: 'mindfulness-reminder',
-		source: require('@/assets/audio/pre-instructions/mindfulness-reminder.mp3'),
+		source: require('@/assets/audio/mindfulness-reminder.m4a'),
 		category: 'pre-instruction',
-		durationMs: 1000,
+		durationMs: 5000,
 		description: 'Herinnering voor mindfulness',
 	},
 	'laying-position': {
 		id: 'laying-position',
-		source: require('@/assets/audio/pre-instructions/laying-position.mp3'),
+		source: require('@/assets/audio/laying-position.m4a'),
 		category: 'pre-instruction',
-		durationMs: 1000,
+		durationMs: 4000,
 		description: 'Instructie voor liggende positie',
 	},
-	'inhale-exhale': {
-		id: 'inhale-exhale',
-		source: require('@/assets/audio/exercise/inhale-exhale.mp3'),
+	// Breathing cues (new .m4a files)
+	'ready': {
+		id: 'ready',
+		source: require('@/assets/audio/ready.m4a'),
 		category: 'exercise',
-		durationMs: 1000,
-		description: 'Adem diep in en adem weer uit',
+		durationMs: 2000,
+		description: 'Klaar om te beginnen',
 	},
-	'and-again': {
-		id: 'and-again',
-		source: require('@/assets/audio/exercise/and-again.mp3'),
+	'inhale': {
+		id: 'inhale',
+		source: require('@/assets/audio/inhale.m4a'),
 		category: 'exercise',
-		durationMs: 1000,
-		description: 'En nog een keer',
+		durationMs: 2000,
+		description: 'Adem in',
 	},
-	'inhale-deeply': {
-		id: 'inhale-deeply',
-		source: require('@/assets/audio/exercise/inhale-deeply.mp3'),
+	'exhale': {
+		id: 'exhale',
+		source: require('@/assets/audio/exhale.m4a'),
 		category: 'exercise',
-		durationMs: 1000,
+		durationMs: 2000,
+		description: 'Adem uit',
+	},
+	'inhale-deep': {
+		id: 'inhale-deep',
+		source: require('@/assets/audio/inhale-deep.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
 		description: 'Adem diep in',
 	},
 	'hold-breath': {
 		id: 'hold-breath',
-		source: require('@/assets/audio/exercise/hold-breath.mp3'),
+		source: require('@/assets/audio/hold-breath.m4a'),
 		category: 'exercise',
-		durationMs: 1000,
+		durationMs: 2000,
 		description: 'En houd je adem vast',
 	},
+	'breath-hold-starts': {
+		id: 'breath-hold-starts',
+		source: require('@/assets/audio/breath-hold-starts.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
+		description: 'De ademhouding begint',
+	},
+	// Milestone announcements (new .m4a files)
+	'milestone-10s': {
+		id: 'milestone-10s',
+		source: require('@/assets/audio/10-seconds.m4a'),
+		category: 'milestone',
+		durationMs: 1500,
+		description: '10 seconden',
+	},
+	'milestone-20s': {
+		id: 'milestone-20s',
+		source: require('@/assets/audio/20-seconds.m4a'),
+		category: 'milestone',
+		durationMs: 1500,
+		description: '20 seconden',
+	},
+	'milestone-30s': {
+		id: 'milestone-30s',
+		source: require('@/assets/audio/30-seconds.m4a'),
+		category: 'milestone',
+		durationMs: 1500,
+		description: '30 seconden',
+	},
+	'milestone-40s': {
+		id: 'milestone-40s',
+		source: require('@/assets/audio/40-seconds.m4a'),
+		category: 'milestone',
+		durationMs: 1500,
+		description: '40 seconden',
+	},
+	// UI sounds
 	'countdown-beep': {
 		id: 'countdown-beep',
 		source: require('@/assets/audio/ui/countdown-beep.mp3'),
 		category: 'ui',
 		durationMs: 1000,
 		description: 'Countdown pieptoon',
-	},
-	'breathing-prep-phase-1': {
-		id: 'breathing-prep-phase-1',
-		source: require('@/assets/audio/preparation/breathing-prep-phase-1.mp3'),
-		category: 'exercise',
-		durationMs: 7000,
-		description: 'Eerste oefeningsademhaling',
-	},
-	'breathing-prep-phase-2': {
-		id: 'breathing-prep-phase-2',
-		source: require('@/assets/audio/preparation/breathing-prep-phase-2.mp3'),
-		category: 'exercise',
-		durationMs: 7000,
-		description: 'Tweede oefeningsademhaling',
-	},
-	'breathing-prep-phase-3': {
-		id: 'breathing-prep-phase-3',
-		source: require('@/assets/audio/preparation/breathing-prep-phase-3.mp3'),
-		category: 'exercise',
-		durationMs: 5000,
-		description: 'Laatste inademen en vasthouden',
 	},
 	'debug-ping': {
 		id: 'debug-ping',
@@ -94,6 +119,67 @@ export const AUDIO_MANIFEST: Record<AudioId, AudioMetadata> = {
 		durationMs: 1000,
 		description: 'Debug pieptoon voor timing verificatie',
 	},
+	// Backup/full sequence
+	'breath-hold-full': {
+		id: 'breath-hold-full',
+		source: require('@/assets/audio/breath-hold-full.m4a'),
+		category: 'exercise',
+		durationMs: 30000,
+		description: 'Volledige ademhalingsoefening sequentie',
+	},
+	// Deprecated (kept for backwards compatibility, pointing to new files)
+	'inhale-exhale': {
+		id: 'inhale-exhale',
+		source: require('@/assets/audio/inhale.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
+		description: 'Adem diep in en adem weer uit (deprecated)',
+	},
+	'and-again': {
+		id: 'and-again',
+		source: require('@/assets/audio/inhale.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
+		description: 'En nog een keer (deprecated)',
+	},
+	'inhale-deeply': {
+		id: 'inhale-deeply',
+		source: require('@/assets/audio/inhale-deep.m4a'),
+		category: 'exercise',
+		durationMs: 2000,
+		description: 'Adem diep in (deprecated)',
+	},
+	'breathing-prep-phase-1': {
+		id: 'breathing-prep-phase-1',
+		source: require('@/assets/audio/inhale.m4a'),
+		category: 'exercise',
+		durationMs: 7000,
+		description: 'Eerste oefeningsademhaling (deprecated)',
+	},
+	'breathing-prep-phase-2': {
+		id: 'breathing-prep-phase-2',
+		source: require('@/assets/audio/inhale.m4a'),
+		category: 'exercise',
+		durationMs: 7000,
+		description: 'Tweede oefeningsademhaling (deprecated)',
+	},
+	'breathing-prep-phase-3': {
+		id: 'breathing-prep-phase-3',
+		source: require('@/assets/audio/inhale-deep.m4a'),
+		category: 'exercise',
+		durationMs: 5000,
+		description: 'Laatste inademen en vasthouden (deprecated)',
+	},
+};
+
+/**
+ * Milestone timing map - maps elapsed milliseconds to milestone audio IDs
+ */
+export const MILESTONE_TIMINGS: Record<number, AudioId> = {
+	10000: 'milestone-10s',
+	20000: 'milestone-20s',
+	30000: 'milestone-30s',
+	40000: 'milestone-40s',
 };
 
 /**
@@ -116,12 +202,13 @@ export const AUDIO_SEQUENCES = {
 
 /**
  * Play debug ping sound for timing verification
- * Only plays in development mode (__DEV__)
+ * Only plays in development mode (__DEV__) AND when DEBUG_AUDIO=true in .env
  * Uses expo-audio directly to avoid interfering with instructional audio context
  * Gracefully fails if audio cannot be played
  */
 export const playDebugPing = async () => {
 	if (!__DEV__) return;
+	if (process.env.DEBUG_AUDIO !== 'true') return;
 
 	try {
 		const {createAudioPlayer, setAudioModeAsync} = require('expo-audio');
