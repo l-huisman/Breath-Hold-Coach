@@ -209,7 +209,6 @@ export default function PracticeExerciseScreen() {
         };
         // Empty dependency array - this effect should only run once on mount
         // All functions are accessed via refs to avoid restarts
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Handle tap to pause
@@ -254,8 +253,8 @@ export default function PracticeExerciseScreen() {
 
                 {/* Center Content: Pause icon or Timer */}
                 <View style={styles.innerContent}>
-                    {currentPhase === 'hold' ? (
-                        // Show timer during hold phase
+                    {(currentPhase === 'hold' || currentPhase === 'complete') ? (
+                        // Show timer during hold and complete phases
                         <ThemedText
                             style={styles.holdTimerText}
                             accessibilityLabel={`Ademhouding: ${formattedHoldTime}`}
