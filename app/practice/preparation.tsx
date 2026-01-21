@@ -29,9 +29,9 @@ type PreparationPhase = 0 | 1 | 2; // 3 phases total
 const BREATHING_TIMING = {
 	INHALE_DURATION: 3500,
 	EXHALE_DURATION: 3500,
-	HOLD_DURATION: 1000,
+	HOLD_DURATION: 2500, // Extended to allow hold-breath audio to finish
 	get PHASE_DURATION() { return this.INHALE_DURATION + this.EXHALE_DURATION; }, // 7000ms
-	get TOTAL_DURATION() { return (this.PHASE_DURATION * 2) + this.INHALE_DURATION + this.HOLD_DURATION; }, // 18500ms
+	get TOTAL_DURATION() { return (this.PHASE_DURATION * 2) + this.INHALE_DURATION + this.HOLD_DURATION; }, // 20000ms
 } as const;
 
 export default function PracticePreparationScreen() {

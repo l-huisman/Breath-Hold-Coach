@@ -159,10 +159,10 @@ describe('PracticePreparationScreen', () => {
             jest.useFakeTimers();
             render(<PracticePreparationScreen/>);
 
-            // Total duration: 18.5 seconds
-            // Phase 0: 7s, Phase 1: 7s, Phase 2: 4.5s (3.5s inhale + 1s hold)
+            // Total duration: 20 seconds
+            // Phase 0: 7s, Phase 1: 7s, Phase 2: 6s (3.5s inhale + 2.5s hold)
             await act(async () => {
-                jest.advanceTimersByTime(18500);
+                jest.advanceTimersByTime(20000);
             });
 
             expect(mockStartExercise).toHaveBeenCalled();
