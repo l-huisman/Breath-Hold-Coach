@@ -13,9 +13,23 @@ import {
 } from '@expo-google-fonts/montserrat';
 import {Colors} from '@/constants/theme';
 import {UserProvider} from '@/contexts/user-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// TypeScript declaration for global dev flag
+declare global {
+    var __DEV_STORAGE_CLEARED__: boolean | undefined;
+}
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
+
+// Clear AsyncStorage on fresh dev launch (persists through hot reload)
+if (__DEV__ && !global.__DEV_STORAGE_CLEARED__) {
+    AsyncStorage.clear()
+        .then(() => console.log('[DEV] AsyncStorage cleared on fresh launch'))
+        .catch((err) => console.warn('[DEV] Failed to clear AsyncStorage:', err));
+    global.__DEV_STORAGE_CLEARED__ = true;
+}
 
 export const unstable_settings = {
     anchor: '(tabs)',
