@@ -7,23 +7,39 @@
  * Audio ID type - union of all available audio file identifiers
  */
 export type AudioId =
+	// Pre-instructions
 	| 'volume-check'
 	| 'mindfulness-reminder'
 	| 'laying-position'
+	// Breathing cues
+	| 'ready'
+	| 'inhale'
+	| 'exhale'
+	| 'inhale-deep'
+	| 'hold-breath'
+	| 'breath-hold-starts'
+	// Milestones
+	| 'milestone-10s'
+	| 'milestone-20s'
+	| 'milestone-30s'
+	| 'milestone-40s'
+	// UI
+	| 'countdown-beep'
+	| 'debug-ping'
+	// Backup/legacy
+	| 'breath-hold-full'
+	// Deprecated (kept for backwards compatibility)
 	| 'inhale-exhale'
 	| 'and-again'
 	| 'inhale-deeply'
-	| 'hold-breath'
-	| 'countdown-beep'
 	| 'breathing-prep-phase-1'
 	| 'breathing-prep-phase-2'
-	| 'breathing-prep-phase-3'
-	| 'debug-ping';
+	| 'breathing-prep-phase-3';
 
 /**
  * Audio category type - organizes audio by usage context
  */
-export type AudioCategory = 'pre-instruction' | 'exercise' | 'ui';
+export type AudioCategory = 'pre-instruction' | 'exercise' | 'milestone' | 'ui';
 
 /**
  * Audio metadata interface

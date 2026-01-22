@@ -28,13 +28,6 @@ jest.mock('expo-haptics', () => ({
 
 // Mock audio constants to avoid requiring MP3 files
 jest.mock('@/constants/audio', () => ({
-    AUDIO_SEQUENCES: {
-        breathingPreparation: [
-            'breathing-prep-phase-1',
-            'breathing-prep-phase-2',
-            'breathing-prep-phase-3',
-        ],
-    },
     playDebugPing: jest.fn(() => Promise.resolve()),
 }));
 
@@ -103,7 +96,7 @@ jest.mock('react-native-safe-area-context', () => ({
 describe('PracticePreparationScreen', () => {
     const mockStartExercise = jest.fn();
     const mockPauseExercise = jest.fn();
-    const mockPlaySequence = jest.fn();
+    const mockPlay = jest.fn();
     const mockStop = jest.fn();
     const mockReplace = jest.fn();
 
@@ -120,22 +113,18 @@ describe('PracticePreparationScreen', () => {
         });
 
         (useAudio as jest.Mock).mockReturnValue({
-            playSequence: mockPlaySequence.mockResolvedValue(undefined),
+            play: mockPlay.mockResolvedValue(undefined),
             stop: mockStop,
             currentAudioId: null,
         });
     });
 
     describe('initialization', () => {
-        it('should auto-play breathing preparation sequence on mount', async () => {
+        it('should play inhale audio on mount', async () => {
             render(<PracticePreparationScreen/>);
 
             await waitFor(() => {
-                expect(mockPlaySequence).toHaveBeenCalledWith([
-                    'breathing-prep-phase-1',
-                    'breathing-prep-phase-2',
-                    'breathing-prep-phase-3',
-                ]);
+                expect(mockPlay).toHaveBeenCalledWith('inhale');
             });
         });
 
@@ -170,10 +159,10 @@ describe('PracticePreparationScreen', () => {
             jest.useFakeTimers();
             render(<PracticePreparationScreen/>);
 
-            // Total duration: 18.5 seconds
-            // Phase 0: 7s, Phase 1: 7s, Phase 2: 4.5s (3.5s inhale + 1s hold)
+            // Total duration: 20 seconds
+            // Phase 0: 7s, Phase 1: 7s, Phase 2: 6s (3.5s inhale + 2.5s hold)
             await act(async () => {
-                jest.advanceTimersByTime(18500);
+                jest.advanceTimersByTime(20000);
             });
 
             expect(mockStartExercise).toHaveBeenCalled();
@@ -199,7 +188,7 @@ describe('PracticePreparationScreen', () => {
 
     describe('error handling', () => {
         it('should show manual control button when audio fails', async () => {
-            mockPlaySequence.mockRejectedValue(new Error('Audio failed'));
+            mockPlay.mockRejectedValue(new Error('Audio failed'));
 
             const {findByLabelText} = render(<PracticePreparationScreen/>);
 
