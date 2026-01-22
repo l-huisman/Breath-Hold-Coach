@@ -4,7 +4,7 @@ import {router} from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {ThemedText} from '@/components/themed-text';
 import {ThemedView} from '@/components/themed-view';
-import {Button} from '@/components/button';
+// import {Button} from '@/components/button'; // Temporarily unused - Ontspan module disabled
 import {Icon} from '@/components/icon';
 import {InstructionStep} from '@/components/instruction-step';
 import {Colors, Fonts} from '@/constants/theme';
@@ -175,8 +175,8 @@ export default function PracticeIndexScreen() {
                     isPlayingAudio={isPlayingAudio}
                 />
 
-                {/* Mindfulness Relax Link (if mindfulness step) */}
-                {currentStep.id === 'mindfulness-reminder' && (
+                {/* Temporarily disabled - Ontspan module not ready */}
+                {/* {currentStep.id === 'mindfulness-reminder' && (
                     <View style={styles.actionButtonContainer}>
                         <Button
                             href="/(tabs)/relax"
@@ -188,7 +188,7 @@ export default function PracticeIndexScreen() {
                             Ga naar Ontspan
                         </Button>
                     </View>
-                )}
+                )} */}
 
                 {/* Replay Audio Button (if audioId exists) */}
                 {currentStep.audioId && (
