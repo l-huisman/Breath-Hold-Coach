@@ -42,9 +42,6 @@ jest.mock('@expo/vector-icons/MaterialIcons', () => require('react-native').View
 
 // Mock audio constants to avoid requiring MP3 files
 jest.mock('@/constants/audio', () => ({
-    AUDIO_SEQUENCES: {
-        startHold: ['start-hold-1', 'start-hold-2'],
-    },
     playDebugPing: jest.fn(),
 }));
 
@@ -97,7 +94,7 @@ describe('PracticeExerciseScreen', () => {
     const mockPauseExercise = jest.fn();
     const mockFinishExercise = jest.fn();
     const mockSetExercisePhase = jest.fn();
-    const mockPlaySequence = jest.fn();
+    const mockPlay = jest.fn();
     const mockStop = jest.fn();
     const mockReplace = jest.fn();
     const mockPush = jest.fn();
@@ -121,7 +118,7 @@ describe('PracticeExerciseScreen', () => {
         });
 
         (useAudio as jest.Mock).mockReturnValue({
-            playSequence: mockPlaySequence.mockResolvedValue(undefined),
+            play: mockPlay.mockResolvedValue(undefined),
             stop: mockStop,
         });
 
@@ -212,7 +209,7 @@ describe('PracticeExerciseScreen', () => {
             expect(mockSetExercisePhase).toHaveBeenCalledWith('hold');
         });
 
-        it('should play hold audio sequence on mount', async () => {
+        it('should play breath-hold-starts audio on mount', async () => {
             render(<PracticeExerciseScreen/>);
 
             // Flush pending promises and timers to trigger useEffect
@@ -220,25 +217,32 @@ describe('PracticeExerciseScreen', () => {
                 jest.runOnlyPendingTimers();
             });
 
-            // Audio is played in a useEffect when phase changes to 'hold'
-            expect(mockPlaySequence).toHaveBeenCalledWith(['start-hold-1', 'start-hold-2']);
+            // Audio is played when exercise starts
+            expect(mockPlay).toHaveBeenCalledWith('breath-hold-starts');
         });
 
         it('should auto-complete after 40 seconds', async () => {
             render(<PracticeExerciseScreen/>);
 
-            // Advance 40 seconds
+            // Advance 40 seconds (exercise duration)
             await act(async () => {
                 jest.advanceTimersByTime(40000);
             });
 
             expect(mockEndBreathHold).toHaveBeenCalled();
             expect(mockFinishExercise).toHaveBeenCalled();
+            expect(mockPlay).toHaveBeenCalledWith('milestone-40s');
+
+            // Navigation happens after 1700ms delay to let audio finish
+            await act(async () => {
+                jest.advanceTimersByTime(1700);
+            });
+
             expect(mockReplace).toHaveBeenCalledWith('/practice/finish');
         });
 
         it('should handle audio playback errors gracefully', async () => {
-            mockPlaySequence.mockRejectedValue(new Error('Audio failed'));
+            mockPlay.mockRejectedValue(new Error('Audio failed'));
 
             // Should not throw error - just verify it renders
             expect(() => render(<PracticeExerciseScreen/>)).not.toThrow();
